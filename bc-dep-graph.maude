@@ -1,5 +1,5 @@
 ********************************************************************************
-*** cbc-dep-graph.maude by Chris Bouchard
+*** bc-dep-graph.maude by Chris Bouchard
 ***
 *** TODO: We probably shouldn't recreate the dependency graphs each time we
 *** want to test occur check. It might be better to turn each rewrite rule on
@@ -9,59 +9,57 @@
 load graph
 load symbol-map
 
-fmod DEP-EDGE is
+fmod BC-DEP-EDGE is
     pr META-TERM .
 
-    sort DepEdge DepNode DepPair .
+    sort BCDepEdge BCDepNode BCDepPair .
 
-    op v : Variable -> DepNode [ctor] .
+    op v : Variable -> BCDepNode [ctor] .
 
-    op __ : DepNode DepNode -> DepPair [ctor comm] .
-    op e : DepNode DepNode Qid -> DepEdge [ctor] .
+    op __ : BCDepNode BCDepNode -> BCDepPair [ctor comm] .
 
-    vars E : DepEdge .
+    op e : BCDepNode BCDepNode Qid -> BCDepEdge [ctor] .
+
+    vars E : BCDepEdge .
     vars L : Qid .
-    vars U V W : DepNode .
+    vars U V W : BCDepNode .
     vars X Y : Variable .
 
-    op from : DepEdge DepNode -> Bool .
+    op from : BCDepEdge BCDepNode -> Bool .
     eq from(e(U, V, L), W) = U == W .
 
-    op to : DepEdge DepNode -> Bool .
+    op to : BCDepEdge BCDepNode -> Bool .
     eq to(e(U, V, L), W) = V == W .
 
-    op nodes : DepEdge -> DepPair .
+    op nodes : BCDepEdge -> BCDepPair .
     eq nodes(e(U, V, L)) = U V .
 
-    op is-cons : DepEdge -> Bool .
+    op is-cons : BCDepEdge -> Bool .
     eq is-cons(e(U, V, L)) = L == 'cons .
 
-    op is-h : DepEdge -> Bool .
-    eq is-h(e(U, V, L)) = L == 'lh or L == 'rh .
-
-    op is-lg : DepEdge -> Bool .
-    eq is-lg(e(U, V, L)) = L == 'lg .
+    op is-cons : BCDepEdge -> Bool .
+    eq is-cons(e(U, V, L)) = L == 'cons .
 endfm
 
-view DepEdge from EDGE to DEP-EDGE is
-    sort Edge to DepEdge .
-    sort Node to DepNode .
-    sort NodePair to DepPair .
+view BCDepEdge from EDGE to BC-DEP-EDGE is
+    sort Edge to BCDepEdge .
+    sort Node to BCDepNode .
+    sort NodePair to BCDepPair .
 endv
 
 fmod DEP-GRAPH is
-    pr META-GRAPH{DepEdge} * (sort Graph{DepEdge} to DepGraph,
-                              sort NeGraph{DepEdge} to NeDepGraph,
-                              sort NodeSet{DepEdge} to DepNodeSet,
-                              sort NeNodeSet{DepEdge} to NeDepNodeSet) .
+    pr META-GRAPH{BCDepEdge} * (sort Graph{BCDepEdge} to BCDepGraph,
+                                sort NeGraph{BCDepEdge} to NeBCDepGraph,
+                                sort NodeSet{BCDepEdge} to BCDepNodeSet,
+                                sort NeNodeSet{BCDepEdge} to NeBCDepNodeSet) .
     pr META-LEVEL .
     pr SYMBOL-MAP .
 
-    vars GR : DepGraph .
+    vars GR : BCDepGraph .
     vars S : UnificationProblem .
-    vars U : DepNode .
+    vars U : BCDepNode .
     vars X Y Z : Variable .
-    vars NS : DepNodeSet .
+    vars NS : BCDepNodeSet .
     vars SYM : SymbolMap .
 
     vars CONS CBC H G : Qid .
@@ -70,7 +68,7 @@ fmod DEP-GRAPH is
     *** Take a list unification problem S and compute the dependency
     *** graph G_l(S)
     op build-list-depgraph : Qid Qid Qid Qid Constant UnificationProblem
-        -> DepGraph .
+        -> BCDepGraph .
     eq build-list-depgraph(CONS, CBC, H, G, NIL, (X =? CONS[Y, Z] /\ S))
         = e(v(X), v(Z), 'cons) || build-list-depgraph(CONS, CBC, H, G, NIL, S) .
     eq build-list-depgraph(CONS, CBC, H, G, NIL, X =? CBC[Y, Z] /\ S)
@@ -81,7 +79,7 @@ fmod DEP-GRAPH is
     *** Take an element unification problem S and compute the dependency
     *** graph G_e(S)
     op build-elt-depgraph : Qid Qid Qid Qid Constant UnificationProblem
-        -> DepGraph .
+        -> BCDepGraph .
     eq build-elt-depgraph(CONS, CBC, H, G, NIL, (X =? H[Y, Z] /\ S))
         = e(v(X), v(Y), 'lh) || e(v(X), v(Z), 'rh)
         || build-elt-depgraph(CONS, CBC, H, G, NIL, S) .
@@ -98,11 +96,11 @@ fmod DEP-GRAPH is
 
     *** Return true if the given list dependency graph violates the occur
     *** check condition
-    op violates-list-oc : DepGraph -> Bool .
+    op violates-list-oc : BCDepGraph -> Bool .
     eq violates-list-oc(GR) = $violates-list-oc(graphnodes(GR), GR) .
 
     *** Helper operator for violates-list-oc
-    op $violates-list-oc : DepNodeSet DepGraph -> Bool .
+    op $violates-list-oc : BCDepNodeSet BCDepGraph -> Bool .
     eq $violates-list-oc((U, NS), GR)
         = meta-ne-path(upModule('DEP-EDGE, false),
                        'is-cons, U, U, GR, 'any) =/= nopath
@@ -117,11 +115,11 @@ fmod DEP-GRAPH is
 
     *** Return true if the given element dependency graph violates the occur
     *** check condition
-    op violates-elt-oc : DepGraph -> Bool .
+    op violates-elt-oc : BCDepGraph -> Bool .
     eq violates-elt-oc(GR) = $violates-elt-oc(graphnodes(GR), GR) .
 
     *** Helper operator for violates-elt-oc
-    op $violates-elt-oc : DepNodeSet DepGraph -> Bool .
+    op $violates-elt-oc : BCDepNodeSet BCDepGraph -> Bool .
     eq $violates-elt-oc((U, NS), GR)
         = meta-ne-path(upModule('DEP-EDGE, false),
                        'is-h, U, U, GR, 'each) =/= nopath

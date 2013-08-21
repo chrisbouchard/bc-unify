@@ -1,5 +1,5 @@
 fth EDGE is
-    pr BOOL .
+    protecting BOOL .
 
     sorts Edge Node NodePair .
 
@@ -10,26 +10,62 @@ fth EDGE is
     op nodes : Edge -> NodePair .
 endfth
 
+fmod QID-EDGE is
+    protecting QID .
+
+    sorts QidEdge QidPair .
+
+    op qe : Qid Qid -> QidEdge [ctor] .
+    op qe : Qid Qid Qid -> QidEdge [ctor] .
+
+    op qp : Qid Qid -> QidPair [ctor comm] .
+
+    vars Q Q1 Q2 Q3 : Qid .
+    vars E : QidEdge .
+
+    op from : QidEdge Qid -> Bool .
+    eq from(qe(Q1, Q2), Q1) = true .
+    eq from(qe(Q1, Q2, Q3), Q1) = true .
+    eq from(E, Q) = false [owise] .
+
+    op to : QidEdge Qid -> Bool .
+    eq to(qe(Q1, Q2), Q2) = true .
+    eq to(qe(Q1, Q2, Q3), Q2) = true .
+    eq to(E, Q) = false [owise] .
+
+    op nodes : QidEdge -> QidPair .
+    eq nodes(qe(Q1, Q2)) = qp(Q1, Q2) .
+    eq nodes(qe(Q1, Q2, Q3)) = qp(Q1, Q2) .
+endfm
+
+view QidEdge from EDGE to QID-EDGE is
+    sort Edge to QidEdge .
+    sort Node to Qid .
+    sort NodePair to QidPair .
+
+    op __ to qp .
+endv
+
 fmod GRAPH{E :: EDGE} is
     sorts Graph{E} NeGraph{E} .
     subsorts E$Edge < NeGraph{E} < Graph{E} .
 
-    sort NodeSet{E} NeNodeSet{E} .
+    sorts NodeSet{E} NeNodeSet{E} .
     subsorts E$Node < NeNodeSet{E} < NodeSet{E} .
-    subsorts E$NodePair < NeNodeSet{E} .
+    ---subsorts E$NodePair < NeNodeSet{E} .
 
     op emptygraph : -> Graph{E} [ctor] .
-    op emptyset : -> NodeSet{E} [ctor] .
-
-    op nopath : ~> NeGraph{E} [ctor] .
 
     op _||_ : Graph{E} Graph{E} -> Graph{E}
-        [assoc comm ctor id: emptygraph prec 121 format (d r os d)] .
-    op _||_ : NeGraph{E} Graph{E} -> NeGraph{E} [ctor ditto] .
+        [assoc comm ctor id: emptygraph prec 80 format (d r os d)] .
+    op _||_ : NeGraph{E} Graph{E} -> NeGraph{E}
+        [ctor ditto] .
 
+    op emptyset : -> NodeSet{E} [ctor] .
     op _,_ : NodeSet{E} NodeSet{E} -> NodeSet{E}
         [assoc comm ctor id: emptyset] .
-    op _,_ : NeNodeSet{E} NodeSet{E} -> NeNodeSet{E} [ctor ditto] .
+    op _,_ : NeNodeSet{E} NodeSet{E} -> NeNodeSet{E}
+        [ctor ditto] .
 
     vars A B : E$Edge .
     vars G H : Graph{E} .
@@ -39,103 +75,104 @@ fmod GRAPH{E :: EDGE} is
     eq A || A = A .
     eq N, N = N .
 
-    op graphnodes(_) : Graph{E} -> NodeSet{E} .
-    op graphnodes(_) : NeGraph{E} -> NeNodeSet{E} .
-    op graphnodes(_) : E$NodePair -> NeNodeSet{E} .
+    op graphnodes : Graph{E} -> NodeSet{E} .
+    op graphnodes : NeGraph{E} -> NeNodeSet{E} .
+    op graphnodes : E$NodePair -> NeNodeSet{E} .
     eq graphnodes(emptygraph) = emptyset .
     eq graphnodes(A || G) = graphnodes(nodes(A)), graphnodes(G) .
     eq graphnodes(N M) = N, M .
 
-    op sources(_) : Graph{E} -> NodeSet{E} .
+    op sources : Graph{E} -> NodeSet{E} .
     eq sources(emptygraph) = emptyset .
     eq sources(emptygraph) = emptyset .
     eq sources(G) = $sources(G, graphnodes(G)) .
 
-    op $sources(_,_) : Graph{E} NodeSet{E} -> NodeSet{E} .
+    op $sources : Graph{E} NodeSet{E} -> NodeSet{E} .
     ceq $sources((A || G), (N, S)) = $sources(G, S) if to(A, N) .
     eq $sources(G, S) = S [owise] .
 
-    op sinks(_) : Graph{E} -> NodeSet{E} .
+    op sinks : Graph{E} -> NodeSet{E} .
     eq sinks(emptygraph) = emptyset .
     eq sinks(G) = $sinks(G, graphnodes(G)) .
 
-    op $sinks(_,_) : Graph{E} NodeSet{E} -> NodeSet{E} .
+    op $sinks : Graph{E} NodeSet{E} -> NodeSet{E} .
     ceq $sinks((A || G), (N, S)) = $sinks(G, S) if from(A, N) .
     eq $sinks(G, S) = S [owise] .
 
     --- Delete the set of nodes in the first argument from the graph in the
     --- second argument.
-    op delete(_,_) : NodeSet{E} Graph{E} -> Graph{E} .
+    op delete : NodeSet{E} Graph{E} -> Graph{E} .
     eq delete((N, S), G) = delete(S, $delete(N, G)) .
     eq delete(emptyset, G) = G .
 
-    op $delete(_,_) : E$Node Graph{E} -> Graph{E} .
+    op $delete : E$Node Graph{E} -> Graph{E} .
     eq $delete(N, emptygraph) = emptygraph .
     ceq $delete(N, (A || G)) = A || delete(N, G)
         if not from(A, N) /\ not to(A, N) .
     eq $delete(N, (A || G)) = delete(N, G) [owise] .
 
-    op hascycle(_) : Graph{E} -> Bool .
+    op hascycle : Graph{E} -> Bool .
     eq hascycle(emptygraph) = false .
     eq hascycle(G) = $hascycle(G, sources(G), sinks(G)) [owise] .
 
-    op $hascycle(_,_,_) : Graph{E} NodeSet{E} NodeSet{E} -> Bool .
+    op $hascycle : Graph{E} NodeSet{E} NodeSet{E} -> Bool .
     eq $hascycle(G, S, emptyset) = true .
     eq $hascycle(G, emptyset, T) = true .
     eq $hascycle(G, S, T) = hascycle(delete((S, T), G)) .
-
-    op path(_,_,_) : E$Node E$Node Graph{E} ~> Graph{E} .
-    eq path(N, N, G) = emptygraph .
-    eq path(N, M, G) = ne-path(N, M, G) [owise] .
-
-    op ne-path(_,_,_) : E$Node E$Node NeGraph{E} ~> NeGraph{E} .
-    ceq ne-path(N, M, A || G) = A if N M := nodes(A) .
-    ceq ne-path(N, M, A || G) = A || H
-        if N O := nodes(A) /\ H := path(O, M, G) /\ H =/= nopath .
-    ceq ne-path(N, M, A || G) = A || H
-        if O M := nodes(A) /\ H := path(N, O, G) /\ H =/= nopath .
-    eq ne-path(N, M, G) = nopath [owise] .
 endfm
 
-fmod META-GRAPH{E :: EDGE} is
-    pr GRAPH{E} .
-    pr META-LEVEL .
+fmod GRAPH-PATH{E :: EDGE} is
+    protecting GRAPH{E} .
 
-    vars A B : E$Edge .
-    vars G H : Graph{E} .
-    vars N M O : E$Node .
-    vars Q : Qid .
-    vars T : Term .
-    vars U : Type .
-    vars MOD : Module .
-    vars OP : Qid .
+    sorts Path{E} NePath{E} Path?{E} NePath?{E} .
+    subsorts E$Edge < NePath{E} < Path{E} NePath?{E} < Path?{E} .
 
-    op meta-path(_,_,_,_,_,_) : Module Qid E$Node E$Node Graph{E} Qid ~> Graph{E} .
-    eq meta-path(MOD, OP, N, N, G, Q) = emptygraph .
-    eq meta-path(MOD, OP, N, M, G, Q) = meta-ne-path(MOD, OP, N, M, G, Q) [owise] .
+    op noPath : -> Path?{E} [ctor] .
+    op noNePath : -> NePath?{E} [ctor] .
 
-    op meta-ne-path(_,_,_,_,_,_) : Module Qid E$Node E$Node NeGraph{E} Qid ~> NeGraph{E} .
-    ceq meta-ne-path(MOD, OP, N, M, A || G, Q) = A if N M := nodes(A) .
-    ceq meta-ne-path(MOD, OP, N, M, A || G, Q) = A || H
-        if N O := nodes(A) /\ H := meta-path(MOD, OP, O, M, G, Q)
-        /\ H =/= nopath /\ ((Q == 'any and check-path-any(MOD, OP, H))
-                            or (Q == 'each and check-path-each(MOD, OP, H))) .
-    ceq meta-ne-path(MOD, OP, N, M, A || G, Q) = A || H
-        if O M := nodes(A) /\ H := meta-path(MOD, OP, N, O, G, Q)
-        /\ H =/= nopath /\ ((Q == 'any and check-path-any(MOD, OP, H))
-                            or (Q == 'each and check-path-each(MOD, OP, H))) .
-    eq meta-ne-path(MOD, OP, N, M, G, Q) = nopath [owise] .
+    *** We only define the [Path{E}] kind for now. We'll use membership axioms
+    *** below to define the sort.
+    op emptypath : -> Path{E} [ctor] .
+    op __ : [Path{E}] [Path{E}] -> [Path{E}] [ctor assoc id: emptypath] .
 
-    op check-path-any(_,_,_) : Module Qid Graph{E} -> Bool .
-    eq check-path-any(MOD, OP, A || G) = 
-        getTerm(metaReduce(MOD, OP[upTerm(A)])) == 'true.Bool
-        or check-path-any(MOD, OP, G) .
-    eq check-path-any(MOD, OP, G) = false [owise] .
+    vars E E1 E2 : E$Edge .
+    vars G : Graph{E} .
+    vars N1 N2 N3 : E$Node .
+    vars N NS ND : E$Node .
+    vars P P1 P1' P2 P2' : Path{E} .
+    vars P? : Path?{E} .
+    vars NEP : NePath{E} .
 
-    op check-path-each(_,_,_) : Module Qid Graph{E} -> Bool .
-    eq check-path-each(MOD, OP, A || G) =
-        getTerm(metaReduce(MOD, OP[upTerm(A)])) == 'true.Bool
-        and check-path-each(MOD, OP, G) .
-    eq check-path-each(MOD, OP, G) = true [owise] .
+    cmb NEP E2 : NePath{E}
+        if P E1 := NEP
+        /\ N1 N2 := nodes(E1) /\ N2 N3 := nodes(E2)
+        /\ to(E1, N2) /\ from(E2, N2) .
+
+    op findPath : E$Node E$Node Graph{E} -> Path{E} .
+    eq findPath(N, N, G) = emptypath .
+    ceq findPath(NS, ND, G) = (if P? :: NePath{E} then P? else noPath fi)
+        if P? := findNePath(NS, ND, G) [owise] .
+
+    op findNePath : E$Node E$Node NeGraph{E} -> NePath?{E} .
+    ceq findNePath(NS, ND, E || G) = E
+        if NS ND := nodes(E) /\ from(E, NS) /\ to(E, ND) .
+    ceq findNePath(NS, ND, E || G) = E P
+        if NS N := nodes(E) /\ from(E, NS) /\ to(E, N)
+        /\ P := findPath(N, ND, G) .
+    ceq findNePath(NS, ND, E || G) = E P
+        if N ND := nodes(E) /\ from(E, N) /\ to(E, ND)
+        /\ P := findPath(NS, N, G) .
+    eq findNePath(NS, ND, G) = noNePath [owise] .
+endfm
+
+fmod QID-GRAPH-PATH is
+    protecting GRAPH-PATH{QidEdge} * (sort Graph{QidEdge} to QidGraph,
+                                      sort NeGraph{QidEdge} to NeQidGraph,
+                                      sort NodeSet{QidEdge} to QidSet,
+                                      sort NeNodeSet{QidEdge} to NeQidSet,
+                                      sort Path{QidEdge} to QidPath,
+                                      sort NePath{QidEdge} to NeQidPath,
+                                      sort Path?{QidEdge} to QidPath?,
+                                      sort NePath?{QidEdge} to NeQidPath?) .
 endfm
 
