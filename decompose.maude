@@ -1,0 +1,161 @@
+*******************************************************************************
+*** decompose.maude
+*** Chris Bouchard
+*** 2011-02-16
+***
+*** A module for decomposing unification problems with arbitrary terms to
+*** problems involving only simple equations, where a simple equation has one
+*** of the following forms: X =? Y, X =? a, X = f(X1, ..., Xn)
+***
+*** 2011-05-15: Refactored TYPE-MAP to take a sort, which can contain any
+*** state or data the user needs to determine the type of a term.
+***
+*** 2011-02-17: We're now using the TYPE-MAP theory to avoid the problem of
+*** finding the type of a term. This could, for example, use a SymbolMap to
+*** look up the type of a function symbol.
+***
+*** 2011-02-17: Now decompose returns a DecomposePair, which contains the
+*** UnificationProblem as well as a Nat so the user knows what the next new
+*** variable will be.
+*******************************************************************************
+
+load tools
+
+fth TYPE-MAP is
+    pr META-TERM .
+
+    sort TypeMap .
+
+    op getTermType : TypeMap Term -> Type .
+endfth
+
+fmod DECOMPOSE{Y :: TYPE-MAP} is
+    pr CONVERSION .
+    pr META-LEVEL .
+    pr NAT .
+    pr TOOLS .
+
+    sort DecomposePair DecomposeTriple UnificationProblem? .
+    subsort UnificationProblem < UnificationProblem? .
+
+    *** This is what we return to the user:
+    ***   - the new simplified unification problem
+    ***   - the next index to use for a new variable
+    op {_,_} : UnificationProblem Nat -> DecomposePair [ctor] .
+
+    *** As we decompose a term, we will keep three things:
+    ***   - the term we are rewriting
+    ***   - the set of simple equations generated so far
+    ***   - the next number to use for a new variable
+    op _;_;_ : TermList UnificationProblem? Nat -> DecomposeTriple [ctor] .
+
+    *** We will use this to represent an empty unification problem, since
+    *** the sort in META-LEVEL has no identity element.
+    op emptyproblem : -> UnificationProblem? .
+
+    *** Extend the sort UnificationProblem so that it can be empty
+    op _/\_ : UnificationProblem? UnificationProblem? -> UnificationProblem?
+        [ctor ditto] .
+    op _/\_ : UnificationProblem? UnificationProblem -> UnificationProblem
+        [ctor ditto] .
+
+
+    var C : Constant .
+    var F : Qid .
+    var K : Type .
+    var L1 L2 L3 M1 M2 : TermList .
+    var N1 N2 N3 N4 : Nat .
+    var S1 S2 S3 S4 : UnificationProblem? .
+    var T1 T2 : Term .
+    var X1 X2 : Variable .
+    var TM : Y$TypeMap .
+
+
+    *** We have to make this an equation because we can't add an identity to
+    *** the declared /\ operator
+    eq T1 =? T2 /\ emptyproblem = T1 =? T2 .
+
+
+    op decompose : Y$TypeMap UnificationProblem Nat -> DecomposePair .
+    op decompose : Y$TypeMap DecomposeTriple -> DecomposeTriple .
+
+    ceq decompose(TM, S1, N1) = { S1, N1 } if complexEqns(S1) = emptyproblem .
+
+    --- Note that we are using if clauses as a sort of "let" environment
+    --- because we need to sequence the calls to decompose and destructure
+    --- their return values.
+
+    *** Decompose equations by decomposing the left, then the right
+    ceq decompose(TM, T1 =? T2, N1) = { X1 =? X2 /\ S2, N3 }
+        if not isSimpleEqn(T1 =? T2)
+        /\ X1 ; S1 ; N2 := decompose(TM, T1 ; simpleEqns(T1 =? T2) ; N1)
+        /\ X2 ; S2 ; N3 := decompose(TM, T2 ; S1 ; N2) .
+    ceq decompose(TM, T1 =? T2 /\ S1, N1)
+        = decompose(TM, X1 =? X2 /\ S3 /\ complexEqns(S1), N3)
+        if not isSimpleEqn(T1 =? T2)
+        /\ X1 ; S2 ; N2 := decompose(TM, T1 ; simpleEqns(T1 =? T2 /\ S1) ; N1)
+        /\ X2 ; S3 ; N3 := decompose(TM, T2 ; S2 ; N2) .
+
+    *** Search for variables and terms already in the result
+    ceq decompose(TM, (X1, L1) ; S1 ; N1) = (X1, L2) ; S2 ; N2
+        if L2 ; S2 ; N2 := decompose(TM, L1 ; S1 ; N1) .
+    ceq decompose(TM, (T1, L1) ; (X1 =? T1) ; N1) = (X1, L2) ; S2 ; N2
+        if L2 ; S2 ; N2 := decompose(TM, L1 ; (X1 =? T1) ; N1) .
+    ceq decompose(TM, (T1, L1) ; (X1 =? T1 /\ S1) ; N1) = (X1, L2) ; S2 ; N2
+        if L2 ; S2 ; N2 := decompose(TM, L1 ; (X1 =? T1 /\ S1) ; N1) .
+
+    *** Create new variables for constants
+    ceq decompose(TM, (C, L1) ; S1 ; N1) = (newVar*(N1, getType(C)), L2) ; S2 ; N2
+        if L2 ; S2 ; N2 := decompose(TM, L1 ; newVar*(N1, getType(C)) =? C /\ S1 ;
+                                     s(N1)) .
+
+    *** Create new variables for functions applied to variables
+    ceq decompose(TM, (F[M1], L1) ; S1 ; N1)
+        = (newVar*(N1, getTermType(TM, F[M1])), L2) ; S2 ; N2
+        if isVarList(M1)
+        /\ L2 ; S2 ; N2 := decompose(TM, L1 ; ( newVar*(N1, getTermType(TM, F[M1]))
+                                            =? F[M1] /\ S1
+                                          ) ; s(N1)) .
+
+    *** For functions applied to non-variable terms, first process the
+    *** children, replace the argument list, and process the root
+    ceq decompose(TM, (F[M1], L1) ; S1 ; N1) = (L2, L3) ; S4 ; N4
+        if M2 ; S2 ; N2 := decompose(TM, M1 ; S1 ; N1) 
+        /\ L2 ; S3 ; N3 := decompose(TM, F[M2] ; S2 ; N2)
+        /\ L3 ; S4 ; N4 := decompose(TM, L1 ; S3 ; N3) .
+
+    *** Base case
+    eq decompose(TM, empty ; S1 ; N1) = empty ; S1 ; N1 .
+
+
+    *** Check if a given term is simple or not
+    op isSimpleEqn : UnificandPair -> Bool .
+    eq isSimpleEqn(X1 =? X2) = true .
+    eq isSimpleEqn(X1 =? C) = true .
+    eq isSimpleEqn(X1 =? F[M1]) = isVarList(M1) .
+    eq isSimpleEqn(T1 =? T2) = false [owise] .
+
+    *** Get the set of simple equations from a unification problem
+    op simpleEqns : UnificationProblem -> UnificationProblem? .
+    ceq simpleEqns(T1 =? T2) = T1 =? T2 if isSimpleEqn(T1 =? T2) .
+    ceq simpleEqns(T1 =? T2 /\ S1) = T1 =? T2 /\ simpleEqns(S1)
+        if isSimpleEqn(T1 =? T2) .
+    ceq simpleEqns(T1 =? T2) = emptyproblem if not isSimpleEqn(T1 =? T2) .
+    ceq simpleEqns(T1 =? T2 /\ S1) = simpleEqns(S1)
+        if not isSimpleEqn(T1 =? T2) .
+
+    *** Get the set of complex equations from a unification problem
+    op complexEqns : UnificationProblem -> UnificationProblem? .
+    ceq complexEqns(T1 =? T2) = T1 =? T2 if not isSimpleEqn(T1 =? T2) .
+    ceq complexEqns(T1 =? T2 /\ S1) = T1 =? T2 /\ complexEqns(S1)
+        if not isSimpleEqn(T1 =? T2) .
+    ceq complexEqns(T1 =? T2) = emptyproblem if isSimpleEqn(T1 =? T2) .
+    ceq complexEqns(T1 =? T2 /\ S1) = complexEqns(S1) if isSimpleEqn(T1 =? T2) .
+
+    *** Check whether a given term list contains only variables
+    op isVarList : TermList -> Bool .
+    eq isVarList((X1, L1)) = isVarList(L1) .
+    eq isVarList(empty) = true .
+    eq isVarList(L1) = false [owise] .
+endfm
+

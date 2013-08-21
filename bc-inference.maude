@@ -1,0 +1,172 @@
+load graph
+load inference
+
+fmod UNIFICAND-SET is
+    protecting EXT-BOOL .
+    protecting META-LEVEL .
+    protecting TOOLS .
+
+    *** We define a new data structure for sets of equations (unificands),
+    *** since the built-in UnificationProblem leaves something to be
+    *** desired -- namely a unit.
+
+    sorts UnificandSet NeUnificandSet .
+    subsorts UnificandPair < NeUnificandSet < UnificandSet .
+
+    *** Constructors
+    op empty : -> UnificandSet [ctor] .
+    op _&_ : UnificandSet UnificandSet -> UnificandSet
+        [ctor assoc comm id: empty prec 80] .
+    op _&_ : NeUnificandSet UnificandSet -> NeUnificandSet
+        [ctor ditto] .
+
+    vars T T1 T2 : Term .
+    vars PROB : UnificationProblem .
+    vars EQ : UnificandSet .
+    vars U : Variable .
+
+    *** Convert a unification problem to a (nicer to work with) unificand set.
+    op problemToSet : UnificationProblem -> UnificandSet .
+    eq problemToSet(T1 =? T2 /\ PROB) = T1 =? T2 & problemToSet(PROB) .
+    eq problemToSet(T1 =? T2) = T1 =? T2 .
+
+    *** Convert a unificand set in standard dag-solved form to a substitution.
+    op setToSubst : UnificandSet -> Substitution .
+    eq setToSubst(U =? T & EQ) = U <- T ; setToSubst(EQ) .
+    eq setToSubst((empty).UnificandSet) = none .
+
+    *** Check if a variable occurs in a set of unificands.
+    op occurs : Variable UnificandSet -> Bool .
+    eq occurs(U, T1 =? T2 & EQ) = occurs(U, T1) or-else
+                                  occurs(U, T2) or-else
+                                  occurs(U, EQ) .
+    eq occurs(U, (empty).UnificandSet) = false .
+endfm
+
+fmod BC-SIGNATURE is
+    protecting META-LEVEL .
+    protecting UNIFICAND-SET .
+
+    sorts BCSignature .
+
+    *** The signature is just given as a sequence of Qids. Maybe this should
+    *** become something better, but pattern-matching works for now.
+    op ______ : Qid Qid Qid Constant Type Type -> BCSignature [ctor] .
+
+    op bc-infer : UnificandSet BCSignature Nat -> UnificationPair? .
+endfm
+
+fmod BC-UNIFICATION is
+    protecting BC-SIGNATURE .
+    protecting INFERENCE .
+    protecting UNIFICAND-SET .
+
+    vars N SKIP : Nat .
+    vars SIG : BCSignature .
+    vars PROB : UnificationProblem .
+    vars EQ : UnificandSet .
+
+    *** This is the entry-point for BC unification.
+    op bc-unify : UnificationProblem BCSignature Nat Nat -> UnificationPair? .
+    eq bc-unify(PROB, SIG, N, SKIP) =
+        downTerm(inferenceRules(upModule('BC-INFERENCE, false),
+                                upTerm(bc-infer(problemToSet(PROB), SIG, N)),
+                                upTerm((noUnifier).UnificationPair?), SKIP),
+                 (noUnifier).UnificationPair?) .
+endfm
+
+mod BC-INFERENCE is
+    protecting BC-SIGNATURE .
+    protecting UNIFICAND-SET .
+
+    vars N : Nat .
+    vars EQ : UnificandSet .
+
+    vars T T1 T2 : Term .
+    vars U V W X Y Z : Variable .
+    vars U' U'' V' X' X'' : Variable .
+    vars BC H CONS : Qid .
+    vars NIL : Constant .
+    vars ELT LIST : Type .
+
+    *** This helper function is defined over our more usable unificand
+    *** sets.
+    op bc-infer : UnificandSet BCSignature Nat -> UnificationPair? .
+
+    rl [rep-elim] :
+        bc-infer(U =? T & U =? T & EQ, BC H CONS NIL ELT LIST, N)
+        => bc-infer(U =? T & EQ, BC H CONS NIL ELT LIST, N)
+        [metadata "prec 1 det"] .
+
+    rl [triv-elim] :
+        bc-infer(U =? U & EQ, BC H CONS NIL ELT LIST, N)
+        => bc-infer(EQ, BC H CONS NIL ELT LIST, N)
+        [metadata "prec 1 det"] .
+
+    crl [var-elim] :
+        bc-infer(U =? V & EQ, BC H CONS NIL ELT LIST, N)
+        => bc-infer(U =? V & replace(U, V, EQ), BC H CONS NIL ELT LIST, N)
+        if occurs(U, EQ)
+        [metadata "prec 2 det"] .
+
+    rl [cancel-cons] :
+        bc-infer(U =? CONS[V, W] & U =? CONS[X, Y] & EQ,
+                 BC H CONS NIL ELT LIST, N)
+        => bc-infer(U =? CONS[V, W] & X =? V & Y =? W & EQ,
+                    BC H CONS NIL ELT LIST, N)
+        [metadata "prec 3 det"] .
+
+    rl [nil-soln-1] :
+        bc-infer(U =? BC[V, W] & U =? NIL & EQ, BC H CONS NIL ELT LIST, N)
+        => bc-infer(U =? NIL & V =? NIL & EQ, BC H CONS NIL ELT LIST, N)
+        [metadata "prec 4 det"] .
+
+    rl [nil-soln-2] :
+        bc-infer(U =? BC[V, W] & V =? NIL & EQ, BC H CONS NIL ELT LIST, N)
+        => bc-infer(U =? NIL & V =? NIL & EQ, BC H CONS NIL ELT LIST, N)
+        [metadata "prec 4 det"] .
+
+    crl [nil-soln-3] :
+        bc-infer(U =? BC[V, W] & EQ, BC H CONS NIL ELT LIST, N)
+        => bc-infer(U =? NIL & V =? NIL & EQ, BC H CONS NIL ELT LIST, N)
+        if true
+        [metadata "prec 4 det"] .
+
+    rl [semi-cancel-bc] :
+        bc-infer(U =? BC[V, W] & U =? BC[X, W] & EQ, BC H CONS NIL ELT LIST, N)
+        => bc-infer(U =? BC[V, W] & X =? V & EQ, BC H CONS NIL ELT LIST, N)
+        [metadata "prec 5 det"] .
+
+    crl [push-below] :
+        bc-infer(U =? BC[V, W] & U =? BC[X, Y] & EQ,
+                 BC H CONS NIL ELT LIST, N)
+        => bc-infer(U =? CONS[U', U''] & V =? CONS[V', Z] & X =? CONS[X', Z] &
+                    U'' =? BC[Z, U'] & U' =? H[V', W] & U' =? H[X', Y] & EQ,
+                    BC H CONS NIL ELT LIST, N + 5)
+        if false
+        /\ U' := newVar*(N,     ELT) /\ U'' := newVar*(N + 1, LIST)
+        /\ V' := newVar*(N + 2, ELT) /\ Z   := newVar*(N + 3, LIST)
+        /\ X' := newVar*(N + 4, ELT)
+        [metadata "prec 6 det"] .
+
+    crl [splitting] :
+        bc-infer(U =? CONS[V, W] & U =? BC[X, Y] & EQ,
+                 BC H CONS NIL ELT LIST, N)
+        => bc-infer(U =? CONS[V, W] & X =? CONS[X', X''] & V =? H[X', Y] &
+                    W =? BC[X'', V] & EQ,
+                    BC H CONS NIL ELT LIST, N + 2)
+        if X' := newVar*(N, ELT) /\ X'' := newVar*(N + 1, LIST)
+        [metadata "prec 7 det"] .
+
+    rl [size-failure] :
+        bc-infer(U =? CONS[V, W] & U =? NIL & EQ, BC H CONS NIL ELT LIST, N)
+        => noUnifier
+        [metadata "prec 0 det"] .
+
+    crl [cycle-failure] :
+        bc-infer(EQ, BC H CONS NIL ELT LIST, N)
+        => noUnifier
+        if false
+        [metadata "prec 0 det"] .
+endm
+

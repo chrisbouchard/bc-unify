@@ -1,0 +1,78 @@
+
+fmod TOOLS is
+    pr CONVERSION .
+    pr META-LEVEL .
+    pr STRING .
+
+    vars N : Nat .
+    vars Y : Type .
+    vars U V W : Variable .
+    vars K : Constant .
+    vars Q : Qid .
+    vars L L' : TermList .
+    vars NL : NeTermList .
+    vars T T' TL TR : Term .
+    vars S : UnificationProblem .
+    vars STR PREFIX SUFFIX : String .
+
+    *** Create a new variable of the given type
+    op newVar* : Nat Type -> Variable .
+    eq newVar*(N, Y) = qid("V#" + string(N, 10) + ":" + string(Y)) .
+
+    op isNewVar : Qid -> Bool .
+    ceq isNewVar(Q) = true
+        if Q :: Variable /\ STR := string(getName(Q))
+        /\ PREFIX := substr(STR, 0, 2)
+        /\ SUFFIX := substr(STR, 2, length(STR))
+        /\ PREFIX == "V#" /\ rat(SUFFIX, 10) :: Nat .
+    eq isNewVar(Q) = false [owise] .
+
+    *** Check whether the variable appears in the term
+    op occurs : Variable TermList -> Bool .
+    eq occurs(U, U) = true .
+    eq occurs(U, Q[L]) = occurs(U, L) .
+    eq occurs(U, (T, NL)) = occurs(U, T) or occurs(U, NL) .
+    eq occurs(U, L) = false [owise] .
+
+    *** Check whether the variable appears in any equation
+    op occurs : Variable UnificationProblem -> Bool .
+    eq occurs(U, TL =? TR /\ S) = occurs(U, TL) or occurs(U, TR) or occurs(U, S) .
+    eq occurs(U, TL =? TR) = occurs(U, TL) or occurs(U, TR) .
+
+    *** Replace all occurences of the variable in the given term
+    op replace : Variable Term TermList -> TermList .
+    eq replace(U, T, U) = T .
+    eq replace(U, T, Q[L]) = Q[replace(U, T, L)] .
+    eq replace(U, T, (T', NL)) = replace(U, T, T'), replace(U, T, NL) .
+    eq replace(U, L, L') = L' [owise] .
+
+    *** Replace all occurences of the variable in all equations
+    op replace : Variable Term UnificationProblem -> UnificationProblem .
+    eq replace(U, T, TL =? TR /\ S)
+        = replace(U, T, TL) =? replace(U, T, TR) /\ replace(U, T, S) .
+    eq replace(U, T, TL =? TR) = replace(U, T, TL) =? replace(U, T, TR) .
+
+    *** Get the root symbol of a term
+    op root : Term -> Qid .
+    eq root(K) = K .
+    eq root(V) = V .
+    eq root(Q[L]) = Q .
+endfm
+
+fmod STRING-UTILS is
+    protecting STRING .
+    protecting LIST{String} * (sort NeList{String} to NeStringList,
+                               sort List{String} to StringList) .
+
+    vars STR SEP PREFIX SUFFIX : String .
+
+    *** Split a string based on a separator string.
+    op splitString : String String -> StringList .
+    ceq splitString(STR, SEP) =
+        splitString(PREFIX, SEP) splitString(SUFFIX, SEP)
+        if PREFIX := substr(STR, 0, find(STR, SEP, 0))
+        /\ SUFFIX := substr(STR, find(STR, SEP, 0) + length(SEP), length(STR)) .
+    ceq splitString(STR, SEP) = if length(STR) > 0 then STR else nil fi
+        if notFound == find(STR, SEP, 0) .
+endfm
+

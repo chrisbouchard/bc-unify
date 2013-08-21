@@ -1,0 +1,52 @@
+fmod APPLY is
+    protecting META-TERM .
+
+    vars C C' : Context .
+    vars CTL : NeCTermList .
+    vars GTL : GTermList .
+    vars T T' : Term .
+    vars TL : TermList .
+    vars F : Qid .
+    vars SUB : Substitution .
+    vars A : Constant .
+    vars V : Variable .
+
+    op _[_] : Context Term -> Term .
+    op _[_] : Context Context -> Context .
+
+    eq [][T] = T .
+    eq [][C] = C .
+
+    eq F[CTL][T] = F[applyContext(CTL, T)] .
+    eq F[CTL][C] = F[applyContext(CTL, C)] .
+
+    op applyContext : GTermList Term -> TermList .
+    op applyContext : GTermList Context -> GTermList .
+
+    eq applyContext((T, CTL), T') = T, applyContext(CTL, T') .
+    eq applyContext((T, CTL), C) = T, applyContext(CTL, C) .
+
+    eq applyContext((C, TL), T) = C[T], TL .
+    eq applyContext((C, TL), C') = C[C'], TL .
+
+
+    op _[_] : Substitution Term -> Term .
+    op _[_] : Substitution Context -> Context .
+
+    eq SUB[A] = A .
+    eq SUB[[]] = [] .
+
+    eq (V <- T ; SUB)[V] = T .
+    eq SUB[V] = V [owise] .
+
+    eq SUB[F[GTL]] = F[applySubst(SUB, GTL)] .
+
+    op applySubst : Substitution TermList -> TermList .
+    op applySubst : Substitution NeCTermList -> NeCTermList .
+
+    eq applySubst(SUB, (T, GTL)) = SUB[T], applySubst(SUB, GTL) .
+    eq applySubst(SUB, (C, GTL)) = SUB[C], applySubst(SUB, GTL) .
+
+    eq applySubst(SUB, empty) = empty .
+endfm
+
