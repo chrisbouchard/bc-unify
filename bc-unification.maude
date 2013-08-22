@@ -41,6 +41,11 @@ fmod UNIFICAND-SET is
                                   occurs(U, T2) or-else
                                   occurs(U, EQ) .
     eq occurs(U, (empty).UnificandSet) = false .
+
+    *** Replace a variable by a term in a set of unificands.
+    op replace : Variable Term UnificandSet -> UnificandSet .
+    eq replace(U, T, T1 =? T2 & EQ) =
+        replace(U, T, T1) =? replace(U, T, T2) & replace(U, T, EQ) .
 endfm
 
 fmod BC-SIGNATURE is
