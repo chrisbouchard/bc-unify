@@ -1,18 +1,3 @@
-fmod SIMPLE-SET{X :: TRIV} is
-    sorts NodeSet{X} NeNodeSet{X} .
-    subsorts X$Elt < NeNodeSet{X} < NodeSet{X} .
-
-    op emptyset : -> NodeSet{X} [ctor] .
-    op __ : NodeSet{X} NodeSet{X} -> NodeSet{X}
-        [ctor assoc comm id: emptyset] .
-    op __ : NeNodeSet{X} NodeSet{X} -> NeNodeSet{X}
-        [ctor ditto] .
-
-    --- SimpleSets are idempotent, but we can't mix the assoc, comm, and idem
-    --- attributes.
-    eq N:X$Elt N:X$Elt = N:X$Elt .
-endfm
-
 fth EDGE is
     protecting BOOL .
 
@@ -31,44 +16,13 @@ fth EDGE is
 
     op from : Edge Node -> Bool .
     op to : Edge Node -> Bool .
-    op nodes : Edge -> NodeSet .
+    op nodes : Edge -> NeNodeSet .
 endfth
 
-fmod QID-EDGE is
-    protecting SIMPLE-SET{Qid} * (sort NodeSet{Qid} to QidSet,
-                                  sort NeNodeSet{Qid} to NeQidSet) .
-
-    sorts QidEdge .
-
-    op qe : Qid Qid -> QidEdge [ctor] .
-    op qe : Qid Qid Qid -> QidEdge [ctor] .
-
-    vars Q Q1 Q2 Q3 : Qid .
-    vars E : QidEdge .
-
-    op from : QidEdge Qid -> Bool .
-    eq from(qe(Q1, Q2), Q1) = true .
-    eq from(qe(Q1, Q2, Q3), Q1) = true .
-    eq from(E, Q) = false [owise] .
-
-    op to : QidEdge Qid -> Bool .
-    eq to(qe(Q1, Q2), Q2) = true .
-    eq to(qe(Q1, Q2, Q3), Q2) = true .
-    eq to(E, Q) = false [owise] .
-
-    op nodes : QidEdge -> QidSet .
-    eq nodes(qe(Q1, Q2)) = Q1 Q2 .
-    eq nodes(qe(Q1, Q2, Q3)) = Q1 Q2 .
-endfm
-
-view QidEdge from EDGE to QID-EDGE is
-    sort Node to Qid .
-    sort Edge to QidEdge .
-    sort NodeSet to QidSet .
-    sort NeNodeSet to NeQidSet .
-endv
-
 fmod GRAPH{E :: EDGE} is
+    protecting NAT .
+
+    *** Define the Graph sort and its related subsorts and constructors.
     sorts Graph{E} NeGraph{E} .
     subsorts E$Edge < NeGraph{E} < Graph{E} .
 
@@ -79,89 +33,30 @@ fmod GRAPH{E :: EDGE} is
     op _||_ : NeGraph{E} Graph{E} -> NeGraph{E}
         [ctor ditto] .
 
-    vars A B : E$Edge .
-    vars G H : Graph{E} .
-    vars N M O : E$Node .
-    vars S T : E$NodeSet .
 
-    --- Graphs are idempotent, but we can't mix the assoc, comm, and idem
-    --- attributes.
-    eq A || A = A .
-
-    op graphnodes : Graph{E} -> E$NodeSet .
-    op graphnodes : NeGraph{E} -> E$NeNodeSet .
-    eq graphnodes(emptygraph) = emptyset .
-    eq graphnodes(A || G) = nodes(A) graphnodes(G) .
-
-    op sources : Graph{E} -> E$NodeSet .
-    eq sources(emptygraph) = emptyset .
-    eq sources(emptygraph) = emptyset .
-    eq sources(G) = $sources(G, graphnodes(G)) .
-
-    op $sources : Graph{E} E$NodeSet -> E$NodeSet .
-    ceq $sources(A || G, N S) = $sources(G, S) if to(A, N) .
-    eq $sources(G, S) = S [owise] .
-
-    op sinks : Graph{E} -> E$NodeSet .
-    eq sinks(emptygraph) = emptyset .
-    eq sinks(G) = $sinks(G, graphnodes(G)) .
-
-    op $sinks : Graph{E} E$NodeSet -> E$NodeSet .
-    ceq $sinks(A || G, N S) = $sinks(G, S) if from(A, N) .
-    eq $sinks(G, S) = S [owise] .
-
-    --- Delete the set of nodes in the first argument from the graph in the
-    --- second argument.
-    op delete : E$NodeSet Graph{E} -> Graph{E} .
-    eq delete(N S, G) = delete(S, $delete(N, G)) .
-    eq delete(emptyset, G) = G .
-
-    op $delete : E$Node Graph{E} -> Graph{E} .
-    eq $delete(N, emptygraph) = emptygraph .
-    ceq $delete(N, A || G) = A || delete(N, G)
-        if not from(A, N) /\ not to(A, N) .
-    eq $delete(N, A || G) = delete(N, G) [owise] .
-
-    op hascycle : Graph{E} -> Bool .
-    eq hascycle(emptygraph) = false .
-    eq hascycle(G) = $hascycle(G, sources(G), sinks(G)) [owise] .
-
-    op $hascycle : Graph{E} E$NodeSet E$NodeSet -> Bool .
-    eq $hascycle(G, S, emptyset) = true .
-    eq $hascycle(G, emptyset, T) = true .
-    eq $hascycle(G, S, T) = hascycle(delete(S T, G)) .
-
-    op getSubgraphFrom : E$NodeSet Graph{E} -> Graph{E} .
-    eq getSubgraphFrom(N S, A || G) =
-        (if from(A, N) then A else emptygraph fi) || getSubgraphFrom(N S, G) .
-    eq getSubgraphFrom(N, emptygraph) = emptygraph .
-
-    op getSubgraphTo : E$NodeSet Graph{E} -> Graph{E} .
-    eq getSubgraphTo(N S, A || G) =
-        (if to(A, N) then A else emptygraph fi) || getSubgraphTo(N S, G) .
-    eq getSubgraphTo(N, emptygraph) = emptygraph .
-endfm
-
-fmod GRAPH-PATH{E :: EDGE} is
-    protecting GRAPH{E} .
-    protecting NAT .
-
+    *** Define the Path sort and its related subsorts and constructors. We
+    *** also provide a maybe type Path? to indicate failure to compute a path.
     sorts Path{E} NePath{E} Path?{E} .
     subsorts E$Edge < NePath{E} < Path{E} < Path?{E} .
 
     op noPath : -> Path?{E} [ctor] .
 
-    *** We only define the [Path{E}] kind for now. We'll use membership axioms
-    *** below to define the sort.
+    --- We only define the [Path{E}] kind for now. We'll use membership axioms
+    --- below to define the sort.
     op emptypath : -> Path{E} [ctor] .
     op __ : [Path{E}] [Path{E}] -> [Path{E}] [ctor assoc id: emptypath] .
 
+
+    *** Define lists of graphs, which is mainly intended as an internal data
+    *** structure. We use these to implement a tail-recursive, backtracking
+    *** search for paths.
     sorts GraphList{E} .
     subsorts Graph{E} < GraphList{E} .
 
     op nil : -> GraphList{E} [ctor] .
     op _;_ : GraphList{E} GraphList{E} -> GraphList{E}
         [ctor assoc id: nil prec 82] .
+
 
     vars E E' E1 E2 : E$Edge .
     vars G G' G'' : Graph{E} .
@@ -174,11 +69,41 @@ fmod GRAPH-PATH{E :: EDGE} is
     vars SKIP : Nat .
     vars S S1 S2 : E$NodeSet .
 
+
     *** The edges in a path have to match up end to end.
     cmb NEP E2 : NePath{E}
         if P E1 := NEP
         /\ N1 N2 S1 := nodes(E1) /\ N2 N3 S2 := nodes(E2)
         /\ to(E1, N2) /\ from(E2, N2) .
+
+
+    --- Graphs are idempotent, but we can't mix the assoc, comm, and idem
+    --- attributes.
+    eq E || E = E .
+
+
+    op graphnodes : Graph{E} -> E$NodeSet .
+    op graphnodes : NeGraph{E} -> E$NeNodeSet .
+    eq graphnodes(emptygraph) = emptyset .
+    eq graphnodes(E || G) = nodes(E) graphnodes(G) .
+
+
+    op hasCycle : Graph{E} -> Bool .
+    ceq hasCycle(G) = true
+        if N S := graphnodes(G) /\ noPath =/= findNePath(N, N, G, 0) .
+    eq hasCycle(G) = false [owise] .
+
+
+    op getSubgraphFrom : E$NodeSet Graph{E} -> Graph{E} .
+    eq getSubgraphFrom(N S, E || G) =
+        (if from(E, N) then E else emptygraph fi) || getSubgraphFrom(N S, G) .
+    eq getSubgraphFrom(N, emptygraph) = emptygraph .
+
+    op getSubgraphTo : E$NodeSet Graph{E} -> Graph{E} .
+    eq getSubgraphTo(N S, E || G) =
+        (if to(E, N) then E else emptygraph fi) || getSubgraphTo(N S, G) .
+    eq getSubgraphTo(N, emptygraph) = emptygraph .
+
 
     op findPath : E$Node E$Node Graph{E} Nat -> Path?{E} .
     eq findPath(N, N, G, SKIP) =
@@ -224,12 +149,65 @@ fmod GRAPH-PATH{E :: EDGE} is
     eq $revertNePath(NS, NC, ND, P, nil, G, SKIP) = noPath .
 endfm
 
-fmod QID-GRAPH-PATH is
-    protecting GRAPH-PATH{QidEdge} * (sort Graph{QidEdge} to QidGraph,
-                                      sort NeGraph{QidEdge} to NeQidGraph,
-                                      sort Path{QidEdge} to QidPath,
-                                      sort NePath{QidEdge} to NeQidPath,
-                                      sort Path?{QidEdge} to QidPath?,
-                                      sort NePath?{QidEdge} to NeQidPath?) .
+
+*** It's useful to have graphs of Qids, so we pre-define them.
+
+fmod SIMPLE-SET{X :: TRIV} is
+    sorts NodeSet{X} NeNodeSet{X} .
+    subsorts X$Elt < NeNodeSet{X} < NodeSet{X} .
+
+    op emptyset : -> NodeSet{X} [ctor] .
+    op __ : NodeSet{X} NodeSet{X} -> NodeSet{X}
+        [ctor assoc comm id: emptyset] .
+    op __ : NeNodeSet{X} NodeSet{X} -> NeNodeSet{X}
+        [ctor ditto] .
+
+    --- SimpleSets are idempotent, but we can't mix the assoc, comm, and idem
+    --- attributes.
+    eq N:X$Elt N:X$Elt = N:X$Elt .
+endfm
+
+fmod QID-EDGE is
+    protecting SIMPLE-SET{Qid} * (sort NodeSet{Qid} to QidSet,
+                                  sort NeNodeSet{Qid} to NeQidSet) .
+
+    sorts QidEdge .
+
+    op qe : Qid Qid -> QidEdge [ctor] .
+    op qe : Qid Qid Qid -> QidEdge [ctor] .
+
+    vars Q Q1 Q2 Q3 : Qid .
+    vars E : QidEdge .
+
+    op from : QidEdge Qid -> Bool .
+    eq from(qe(Q1, Q2), Q1) = true .
+    eq from(qe(Q1, Q2, Q3), Q1) = true .
+    eq from(E, Q) = false [owise] .
+
+    op to : QidEdge Qid -> Bool .
+    eq to(qe(Q1, Q2), Q2) = true .
+    eq to(qe(Q1, Q2, Q3), Q2) = true .
+    eq to(E, Q) = false [owise] .
+
+    op nodes : QidEdge -> QidSet .
+    eq nodes(qe(Q1, Q2)) = Q1 Q2 .
+    eq nodes(qe(Q1, Q2, Q3)) = Q1 Q2 .
+endfm
+
+view QidEdge from EDGE to QID-EDGE is
+    sort Node to Qid .
+    sort Edge to QidEdge .
+    sort NodeSet to QidSet .
+    sort NeNodeSet to NeQidSet .
+endv
+
+fmod QID-GRAPH is
+    protecting GRAPH{QidEdge}
+        * (sort Graph{QidEdge} to QidGraph,
+           sort NeGraph{QidEdge} to NeQidGraph,
+           sort Path{QidEdge} to QidPath,
+           sort NePath{QidEdge} to NeQidPath,
+           sort Path?{QidEdge} to QidPath?,
+           sort NePath?{QidEdge} to NeQidPath?) .
 endfm
 
