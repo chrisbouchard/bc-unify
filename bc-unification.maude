@@ -46,6 +46,7 @@ fmod UNIFICAND-SET is
     op replace : Variable Term UnificandSet -> UnificandSet .
     eq replace(U, T, T1 =? T2 & EQ) =
         replace(U, T, T1) =? replace(U, T, T2) & replace(U, T, EQ) .
+    eq replace(U, T, (empty).UnificandSet) = (empty).UnificandSet .
 endfm
 
 fmod BC-SIGNATURE is
