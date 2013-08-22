@@ -92,12 +92,18 @@ fmod GRAPH{E :: EDGE} is
 
     op getSubgraphFrom : E$NodeSet Graph{E} -> Graph{E} .
     eq getSubgraphFrom(s(N, S), E || G) =
-        (if from(E, N) then E else emptygraph fi) || getSubgraphFrom(s(N, S), G) .
+        if from(E, N)
+            then E
+            else emptygraph
+        fi || getSubgraphFrom(s(N, S), G) .
     eq getSubgraphFrom(N, emptygraph) = emptygraph .
 
     op getSubgraphTo : E$NodeSet Graph{E} -> Graph{E} .
     eq getSubgraphTo(s(N, S), E || G) =
-        (if to(E, N) then E else emptygraph fi) || getSubgraphTo(s(N, S), G) .
+        if to(E, N)
+            then E
+            else emptygraph
+        fi || getSubgraphTo(s(N, S), G) .
     eq getSubgraphTo(N, emptygraph) = emptygraph .
 
 
@@ -149,6 +155,9 @@ endfm
 fmod META-GRAPH{E :: EDGE} is
     protecting GRAPH{E} .
     protecting META-LEVEL .
+
+    op findPath : E$Node E$Node Graph{E} Qid Nat -> Path?{E} .
+    op findNePath : E$Node E$Node Graph{E} Qid Nat -> Path?{E} .
 endfm
 
 
