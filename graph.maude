@@ -5,14 +5,10 @@ fth EDGE is
     subsorts Node < NeNodeSet < NodeSet .
 
     op emptyset : -> NodeSet [ctor] .
-    op __ : NodeSet NodeSet -> NodeSet
+    op s : NodeSet NodeSet -> NodeSet
         [ctor assoc comm id: emptyset] .
-    op __ : NeNodeSet NodeSet -> NeNodeSet
+    op s : NeNodeSet NodeSet -> NeNodeSet
         [ctor ditto] .
-
-    --- NodeSets are idempotent, but we can't mix the assoc, comm, and idem
-    --- attributes.
-    eq N:Node N:Node = N:Node [nonexec] .
 
     op from : Edge Node -> Bool .
     op to : Edge Node -> Bool .
@@ -73,7 +69,7 @@ fmod GRAPH{E :: EDGE} is
     *** The edges in a path have to match up end to end.
     cmb NEP E2 : NePath{E}
         if P E1 := NEP
-        /\ N1 N2 S1 := nodes(E1) /\ N2 N3 S2 := nodes(E2)
+        /\ s(N1, N2, S1) := nodes(E1) /\ s(N2, N3, S2) := nodes(E2)
         /\ to(E1, N2) /\ from(E2, N2) .
 
 
@@ -85,23 +81,23 @@ fmod GRAPH{E :: EDGE} is
     op graphnodes : Graph{E} -> E$NodeSet .
     op graphnodes : NeGraph{E} -> E$NeNodeSet .
     eq graphnodes(emptygraph) = emptyset .
-    eq graphnodes(E || G) = nodes(E) graphnodes(G) .
+    eq graphnodes(E || G) = s(nodes(E), graphnodes(G)) .
 
 
     op hasCycle : Graph{E} -> Bool .
     ceq hasCycle(G) = true
-        if N S := graphnodes(G) /\ noPath =/= findNePath(N, N, G, 0) .
+        if s(N, S) := graphnodes(G) /\ noPath =/= findNePath(N, N, G, 0) .
     eq hasCycle(G) = false [owise] .
 
 
     op getSubgraphFrom : E$NodeSet Graph{E} -> Graph{E} .
-    eq getSubgraphFrom(N S, E || G) =
-        (if from(E, N) then E else emptygraph fi) || getSubgraphFrom(N S, G) .
+    eq getSubgraphFrom(s(N, S), E || G) =
+        (if from(E, N) then E else emptygraph fi) || getSubgraphFrom(s(N, S), G) .
     eq getSubgraphFrom(N, emptygraph) = emptygraph .
 
     op getSubgraphTo : E$NodeSet Graph{E} -> Graph{E} .
-    eq getSubgraphTo(N S, E || G) =
-        (if to(E, N) then E else emptygraph fi) || getSubgraphTo(N S, G) .
+    eq getSubgraphTo(s(N, S), E || G) =
+        (if to(E, N) then E else emptygraph fi) || getSubgraphTo(s(N, S), G) .
     eq getSubgraphTo(N, emptygraph) = emptygraph .
 
 
@@ -125,7 +121,7 @@ fmod GRAPH{E :: EDGE} is
     ceq $findNePath(NS, NC, ND, P, GL, G, SKIP) =
         $findNePath(NS, N, ND, P E, (GL ; G'), G'', SKIP)
         if NC =/= ND /\ E || G' := getSubgraphFrom(NC, G)
-        /\ NC N S := nodes(E) /\ from(E, NC) /\ to(E, N)
+        /\ s(NC, N, S) := nodes(E) /\ from(E, NC) /\ to(E, N)
         /\ E || G'' := G .
     ceq $findNePath(NS, NC, ND, P, GL, G, SKIP) =
         $revertNePath(NS, NC, ND, P, GL, G, SKIP)
@@ -140,36 +136,38 @@ fmod GRAPH{E :: EDGE} is
                        -> Path?{E} .
     ceq $revertNePath(NS, NC, ND, P E, (GL ; G' || E'), G, SKIP) =
         $findNePath(NS, N2, ND, P E', (GL ; G'), G'', SKIP)
-        if N1 NC S1 := nodes(E) /\ N1 N2 S2 := nodes(E')
+        if s(N1, NC, S1) := nodes(E) /\ s(N1, N2, S2) := nodes(E')
         /\ from(E, N1) /\ from(E', N1) /\ to(E', N2)
         /\ E' || G'' := G || E .
     ceq $revertNePath(NS, NC, ND, P E, (GL ; emptygraph), G, SKIP) =
         $revertNePath(NS, N, ND, P, GL, G || E, SKIP)
-        if N NC S := nodes(E) /\ from(E, N) .
+        if s(N, NC, S) := nodes(E) /\ from(E, N) .
     eq $revertNePath(NS, NC, ND, P, nil, G, SKIP) = noPath .
+endfm
+
+
+fmod META-GRAPH{E :: EDGE} is
+    protecting GRAPH{E} .
+    protecting META-LEVEL .
 endfm
 
 
 *** It's useful to have graphs of Qids, so we pre-define them.
 
 fmod SIMPLE-SET{X :: TRIV} is
-    sorts NodeSet{X} NeNodeSet{X} .
-    subsorts X$Elt < NeNodeSet{X} < NodeSet{X} .
+    sorts SimpleSet{X} NeSimpleSet{X} .
+    subsorts X$Elt < NeSimpleSet{X} < SimpleSet{X} .
 
-    op emptyset : -> NodeSet{X} [ctor] .
-    op __ : NodeSet{X} NodeSet{X} -> NodeSet{X}
+    op emptyset : -> SimpleSet{X} [ctor] .
+    op s : SimpleSet{X} SimpleSet{X} -> SimpleSet{X}
         [ctor assoc comm id: emptyset] .
-    op __ : NeNodeSet{X} NodeSet{X} -> NeNodeSet{X}
+    op s : NeSimpleSet{X} SimpleSet{X} -> NeSimpleSet{X}
         [ctor ditto] .
-
-    --- SimpleSets are idempotent, but we can't mix the assoc, comm, and idem
-    --- attributes.
-    eq N:X$Elt N:X$Elt = N:X$Elt .
 endfm
 
 fmod QID-EDGE is
-    protecting SIMPLE-SET{Qid} * (sort NodeSet{Qid} to QidSet,
-                                  sort NeNodeSet{Qid} to NeQidSet) .
+    protecting SIMPLE-SET{Qid} * (sort SimpleSet{Qid} to QidSet,
+                                  sort NeSimpleSet{Qid} to NeQidSet) .
 
     sorts QidEdge .
 
@@ -188,8 +186,8 @@ fmod QID-EDGE is
     eq to(qe(Q1, Q2, Q3), Q4) = Q2 == Q4 .
 
     op nodes : QidEdge -> NeQidSet .
-    eq nodes(qe(Q1, Q2)) = Q1 Q2 .
-    eq nodes(qe(Q1, Q2, Q3)) = Q1 Q2 .
+    eq nodes(qe(Q1, Q2)) = s(Q1, Q2) .
+    eq nodes(qe(Q1, Q2, Q3)) = s(Q1, Q2) .
 endfm
 
 view QidEdge from EDGE to QID-EDGE is

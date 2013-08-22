@@ -48,6 +48,7 @@ fmod TOOLS is
 
     *** Replace all occurences of the variable in all equations
     op replace : Variable Term UnificationProblem -> UnificationProblem .
+    op replace : Variable Term UnificandPair -> UnificandPair .
     eq replace(U, T, TL =? TR /\ S)
         = replace(U, T, TL) =? replace(U, T, TR) /\ replace(U, T, S) .
     eq replace(U, T, TL =? TR) = replace(U, T, TL) =? replace(U, T, TR) .

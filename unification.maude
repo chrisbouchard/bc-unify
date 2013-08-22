@@ -1,0 +1,57 @@
+********************************************************************************
+*** unification.maude by Chris Bouchard
+***
+*** 2013-08-22: Renamed unify_ to st-unify and switched to using UnificandSet
+***             internally. Switched to using UnificationProblem externally.
+*** 2010-06-01: Fixed bug in unify_
+*** 2010-06-06: Added better formatting and color support
+***
+********************************************************************************
+
+load tools
+load unificand-set
+
+mod UNIFICATION is
+    protecting META-LEVEL .
+    protecting NAT .
+    protecting TOOLS .
+    protecting UNIFICAND-SET .
+
+    vars A B : Constant .
+    vars E : UnificandPair .
+    vars F G : Qid .
+    vars L M : TermList .
+    vars PROB : UnificationProblem .
+    vars T U V : Term .
+    vars X Y : Variable .
+    vars S : UnificandSet .
+    vars N : Nat .
+
+    *** Attempt to find the most general unifier for a set of equations
+    op st-unify : UnificationProblem Nat -> UnificationPair? .
+    eq st-unify(PROB, N) = $st-unify(problemToSet(PROB), N) .
+
+    op $st-unify : UnificandSet Nat -> UnificationPair? .
+    eq $st-unify(E & E & S, N) = $st-unify(E & S, N) .
+    eq $st-unify(T =? T & S, N) = $st-unify(S, N) .
+    eq $st-unify(F[L] =? F[M] & S, N) = $st-unify(break(L, M) & S, N) .
+    ceq $st-unify(A =? B & S, N) = noUnifier if A =/= B .
+    ceq $st-unify(F[L] =? G[M] & S, N) = noUnifier if F =/= G .
+    ceq $st-unify(X =? T & S, N) = noUnifier if occurs(X, T) .
+    ceq $st-unify(T =? X & S, N) = $st-unify(X =? T & S, N) if not (T :: Variable) .
+    ceq $st-unify(X =? T & S, N) = $st-unify(X =? T & replace(X, T, S), N)
+        if not occurs(X, T) /\ occurs(X, S) .
+    eq $st-unify(S, N) = {buildsub(S), N} [owise] .
+
+    *** Match pairs of terms in two term lists to make a set of equations
+    op break : TermList TermList -> UnificandSet .
+    eq break((T, L), (U, M)) = T =? U & break(L, M) .
+    eq break(empty, empty) = empty .
+
+    *** Create a substitution from a set of equations with variables on their
+    *** left hand sides
+    op buildsub : UnificandSet -> Substitution .
+    eq buildsub(X =? T & S) = X <- T ; buildsub(S) .
+    eq buildsub(empty) = none .
+endm
+

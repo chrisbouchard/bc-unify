@@ -1,0 +1,53 @@
+load tools
+
+fmod UNIFICAND-SET is
+    protecting EXT-BOOL .
+    protecting META-LEVEL .
+    protecting TOOLS .
+
+    *** We define a new data structure for sets of equations (unificands),
+    *** since the built-in UnificationProblem leaves something to be
+    *** desired -- namely a unit.
+
+    sorts UnificandSet EmptyUnificandSet NeUnificandSet .
+    subsorts UnificandPair < EmptyUnificandSet NeUnificandSet < UnificandSet .
+
+    *** Constructors
+    op empty : -> EmptyUnificandSet [ctor] .
+    op _&_ : UnificandSet UnificandSet -> UnificandSet
+        [ctor assoc comm id: empty prec 80] .
+    op _&_ : NeUnificandSet UnificandSet -> NeUnificandSet
+        [ctor ditto] .
+
+    vars T T1 T2 : Term .
+    vars PROB : UnificationProblem .
+    vars EQ : UnificandSet .
+    vars NEQ : NeUnificandSet .
+    vars U : Variable .
+
+    *** Convert a unification problem to a (nicer to work with) unificand set.
+    op problemToSet : UnificationProblem -> UnificandSet .
+    eq problemToSet(T1 =? T2 /\ PROB) = T1 =? T2 & problemToSet(PROB) .
+    eq problemToSet(T1 =? T2) = T1 =? T2 .
+
+    *** Convert a unificand set in standard dag-solved form to a substitution.
+    op setToSubst : UnificandSet -> Substitution .
+    eq setToSubst(U =? T & EQ) = U <- T ; setToSubst(EQ) .
+    eq setToSubst((empty).UnificandSet) = none .
+
+    *** Check if a variable occurs in a set of unificands.
+    op occurs : Variable UnificandSet -> Bool .
+    eq occurs(U, T1 =? T2 & EQ) = occurs(U, T1) or-else
+                                  occurs(U, T2) or-else
+                                  occurs(U, EQ) .
+    eq occurs(U, (empty).UnificandSet) = false .
+
+    *** Replace a variable by a term in a set of unificands.
+    op replace : Variable Term NeUnificandSet -> NeUnificandSet .
+    eq replace(U, T, T1 =? T2 & NEQ) =
+        replace(U, T, T1) =? replace(U, T, T2) & replace(U, T, NEQ) .
+
+    op replace : Variable Term EmptyUnificandSet -> EmptyUnificandSet .
+    eq replace(U, T, (empty).UnificandSet) = (empty).UnificandSet .
+endfm
+

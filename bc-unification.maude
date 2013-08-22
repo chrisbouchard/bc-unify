@@ -1,53 +1,6 @@
 load graph
 load inference
-
-fmod UNIFICAND-SET is
-    protecting EXT-BOOL .
-    protecting META-LEVEL .
-    protecting TOOLS .
-
-    *** We define a new data structure for sets of equations (unificands),
-    *** since the built-in UnificationProblem leaves something to be
-    *** desired -- namely a unit.
-
-    sorts UnificandSet NeUnificandSet .
-    subsorts UnificandPair < NeUnificandSet < UnificandSet .
-
-    *** Constructors
-    op empty : -> UnificandSet [ctor] .
-    op _&_ : UnificandSet UnificandSet -> UnificandSet
-        [ctor assoc comm id: empty prec 80] .
-    op _&_ : NeUnificandSet UnificandSet -> NeUnificandSet
-        [ctor ditto] .
-
-    vars T T1 T2 : Term .
-    vars PROB : UnificationProblem .
-    vars EQ : UnificandSet .
-    vars U : Variable .
-
-    *** Convert a unification problem to a (nicer to work with) unificand set.
-    op problemToSet : UnificationProblem -> UnificandSet .
-    eq problemToSet(T1 =? T2 /\ PROB) = T1 =? T2 & problemToSet(PROB) .
-    eq problemToSet(T1 =? T2) = T1 =? T2 .
-
-    *** Convert a unificand set in standard dag-solved form to a substitution.
-    op setToSubst : UnificandSet -> Substitution .
-    eq setToSubst(U =? T & EQ) = U <- T ; setToSubst(EQ) .
-    eq setToSubst((empty).UnificandSet) = none .
-
-    *** Check if a variable occurs in a set of unificands.
-    op occurs : Variable UnificandSet -> Bool .
-    eq occurs(U, T1 =? T2 & EQ) = occurs(U, T1) or-else
-                                  occurs(U, T2) or-else
-                                  occurs(U, EQ) .
-    eq occurs(U, (empty).UnificandSet) = false .
-
-    *** Replace a variable by a term in a set of unificands.
-    op replace : Variable Term UnificandSet -> UnificandSet .
-    eq replace(U, T, T1 =? T2 & EQ) =
-        replace(U, T, T1) =? replace(U, T, T2) & replace(U, T, EQ) .
-    eq replace(U, T, (empty).UnificandSet) = (empty).UnificandSet .
-endfm
+load unificand-set
 
 fmod BC-SIGNATURE is
     protecting META-LEVEL .
@@ -182,8 +135,9 @@ endv
 
 fmod BC-EDGE is
     protecting META-TERM .
-    protecting SIMPLE-SET{Variable} * (sort NodeSet{Variable} to BCNodeSet,
-                                       sort NeNodeSet{Variable} to NeBCNodeSet) .
+    protecting SIMPLE-SET{Variable}
+        * (sort SimpleSet{Variable} to BCSimpleSet,
+           sort NeSimpleSet{Variable} to NeBCSimpleSet) .
 
     sorts BCEdge .
 
@@ -191,6 +145,7 @@ fmod BC-EDGE is
     op consE : Variable Variable -> BCEdge [ctor] .
 
     vars U V W : Variable .
+    vars E : BCEdge .
 
     op from : BCEdge Variable -> Bool .
     eq from(bcE(U, V), W) = U == W or V == W .
@@ -200,25 +155,41 @@ fmod BC-EDGE is
     eq to(bcE(U, V), W) = U == W or V == W .
     eq to(consE(U, V), W) = V == W .
 
-    op nodes : BCEdge -> NeBCNodeSet .
-    eq nodes(bcE(U, V)) = U V .
-    eq nodes(consE(U, V)) = U V .
+    op nodes : BCEdge -> NeBCSimpleSet .
+    eq nodes(bcE(U, V)) = s(U, V) .
+    eq nodes(consE(U, V)) = s(U, V) .
+
+    op _>bc_in_ : Variable Variable BCEdge -> Bool .
+    eq U >bc V in bcE(U, V) = true .
+    eq U >bc V in E = false [owise] .
 endfm
 
 view BCEdge from EDGE to BC-EDGE is
     sort Node to Variable .
     sort Edge to BCEdge .
-    sort NodeSet to BCNodeSet .
-    sort NeNodeSet to NeBCNodeSet .
+    sort NodeSet to BCSimpleSet .
+    sort NeNodeSet to NeBCSimpleSet .
 endv
 
 fmod BC-GRAPH is
-    protecting GRAPH{BCEdge}
+    protecting EXT-BOOL .
+    protecting META-GRAPH{BCEdge}
         * (sort Graph{BCEdge} to BCGraph,
            sort NeGraph{BCEdge} to NeBCGraph,
            sort Path{BCEdge} to BCPath,
            sort NePath{BCEdge} to NeBCPath,
            sort Path?{BCEdge} to BCPath?,
            sort NePath?{BCEdge} to NeBCPath?) .
+
+    vars U V W : Variable .
+    vars E : BCEdge .
+    vars P : BCPath .
+
+    op _>bc*_in_ : Variable Variable BCPath -> Bool .
+    eq U >bc* V in P = U == V or-else U >bc+ V in P .
+
+    op _>bc+_in_ : Variable Variable BCPath -> Bool .
+    ceq U >bc+ V in E P = U >bc W in E and-then (W == V or-else W >bc+ V in P)
+        if s(U, W) := nodes(E) .
 endfm
 
