@@ -176,20 +176,18 @@ fmod QID-EDGE is
     op qe : Qid Qid -> QidEdge [ctor] .
     op qe : Qid Qid Qid -> QidEdge [ctor] .
 
-    vars Q Q1 Q2 Q3 : Qid .
+    vars Q Q1 Q2 Q3 Q4 : Qid .
     vars E : QidEdge .
 
     op from : QidEdge Qid -> Bool .
-    eq from(qe(Q1, Q2), Q1) = true .
-    eq from(qe(Q1, Q2, Q3), Q1) = true .
-    eq from(E, Q) = false [owise] .
+    eq from(qe(Q1, Q2), Q4) = Q1 == Q4 .
+    eq from(qe(Q1, Q2, Q3), Q4) = Q1 == Q4 .
 
     op to : QidEdge Qid -> Bool .
-    eq to(qe(Q1, Q2), Q2) = true .
-    eq to(qe(Q1, Q2, Q3), Q2) = true .
-    eq to(E, Q) = false [owise] .
+    eq to(qe(Q1, Q2), Q4) = Q2 == Q4 .
+    eq to(qe(Q1, Q2, Q3), Q4) = Q2 == Q4 .
 
-    op nodes : QidEdge -> QidSet .
+    op nodes : QidEdge -> NeQidSet .
     eq nodes(qe(Q1, Q2)) = Q1 Q2 .
     eq nodes(qe(Q1, Q2, Q3)) = Q1 Q2 .
 endfm

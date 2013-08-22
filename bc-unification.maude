@@ -176,3 +176,49 @@ mod BC-INFERENCE is
         [metadata "prec 0 det"] .
 endm
 
+view Variable from TRIV to META-TERM is
+    sort Elt to Variable .
+endv
+
+fmod BC-EDGE is
+    protecting META-TERM .
+    protecting SIMPLE-SET{Variable} * (sort NodeSet{Variable} to BCNodeSet,
+                                       sort NeNodeSet{Variable} to NeBCNodeSet) .
+
+    sorts BCEdge .
+
+    op bcE : Variable Variable -> BCEdge [ctor] .
+    op consE : Variable Variable -> BCEdge [ctor] .
+
+    vars U V W : Variable .
+
+    op from : BCEdge Variable -> Bool .
+    eq from(bcE(U, V), W) = U == W or V == W .
+    eq from(consE(U, V), W) = U == W .
+
+    op to : BCEdge Variable -> Bool .
+    eq to(bcE(U, V), W) = U == W or V == W .
+    eq to(consE(U, V), W) = V == W .
+
+    op nodes : BCEdge -> NeBCNodeSet .
+    eq nodes(bcE(U, V)) = U V .
+    eq nodes(consE(U, V)) = U V .
+endfm
+
+view BCEdge from EDGE to BC-EDGE is
+    sort Node to Variable .
+    sort Edge to BCEdge .
+    sort NodeSet to BCNodeSet .
+    sort NeNodeSet to NeBCNodeSet .
+endv
+
+fmod BC-GRAPH is
+    protecting GRAPH{BCEdge}
+        * (sort Graph{BCEdge} to BCGraph,
+           sort NeGraph{BCEdge} to NeBCGraph,
+           sort Path{BCEdge} to BCPath,
+           sort NePath{BCEdge} to NeBCPath,
+           sort Path?{BCEdge} to BCPath?,
+           sort NePath?{BCEdge} to NeBCPath?) .
+endfm
+
