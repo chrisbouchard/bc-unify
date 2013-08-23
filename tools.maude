@@ -60,6 +60,16 @@ fmod TOOLS is
     eq root(Q[L]) = Q .
 endfm
 
+fmod NAT-UTILS is
+    protecting NAT .
+
+    var N : Nat .
+
+    op dec : Nat -> Nat .
+    eq dec(s N) = N .
+    eq dec(0) = 0 .
+endfm
+
 fmod STRING-UTILS is
     protecting STRING .
     protecting LIST{String} * (sort NeList{String} to NeStringList,

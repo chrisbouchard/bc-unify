@@ -35,6 +35,7 @@ fmod BC-UNIFICATION is
 endfm
 
 mod BC-INFERENCE is
+    protecting BC-GRAPH .
     protecting BC-SIGNATURE .
     protecting UNIFICAND-SET .
 
@@ -88,7 +89,7 @@ mod BC-INFERENCE is
     crl [nil-soln-3] :
         bc-infer(U =? BC[V, W] & EQ, BC H CONS NIL ELT LIST, N)
         => bc-infer(U =? NIL & V =? NIL & EQ, BC H CONS NIL ELT LIST, N)
-        if true
+        if hasBcCycle(buildGraph(EQ, BC H CONS NIL ELT LIST))
         [metadata "prec 4 det"] .
 
     rl [semi-cancel-bc] :
@@ -125,8 +126,18 @@ mod BC-INFERENCE is
     crl [cycle-failure] :
         bc-infer(EQ, BC H CONS NIL ELT LIST, N)
         => noUnifier
-        if false
+        if hasLCycle(buildGraph(EQ, BC H CONS NIL ELT LIST))
         [metadata "prec 0 det"] .
+
+
+    *** Convert a set of unificands into a dependency graph.
+    op buildGraph : UnificandSet BCSignature -> BCGraph .
+    eq buildGraph(U =? CONS[V, W] & EQ, BC H CONS NIL ELT LIST) =
+        bcE(U, W) || buildGraph(EQ, BC H CONS NIL ELT LIST) .
+    eq buildGraph(U =? BC[V, W] & EQ, BC H CONS NIL ELT LIST) =
+        bcE(U, V) || buildGraph(EQ, BC H CONS NIL ELT LIST) .
+    eq buildGraph(U =? T & EQ, BC H CONS NIL ELT LIST) =
+        buildGraph(EQ, BC H CONS NIL ELT LIST) [owise] .
 endm
 
 view Variable from TRIV to META-TERM is
@@ -162,6 +173,14 @@ fmod BC-EDGE is
     op _>bc_in_ : Variable Variable BCEdge -> Bool .
     eq U >bc V in bcE(U, V) = true .
     eq U >bc V in E = false [owise] .
+
+    op isBc : BCEdge -> Bool .
+    eq isBc(bcE(U, V)) = true .
+    eq isBc(E) = false [owise] .
+
+    op isCons : BCEdge -> Bool .
+    eq isCons(consE(U, V)) = true .
+    eq isCons(E) = false [owise] .
 endfm
 
 view BCEdge from EDGE to BC-EDGE is
@@ -181,15 +200,33 @@ fmod BC-GRAPH is
            sort Path?{BCEdge} to BCPath?,
            sort NePath?{BCEdge} to NeBCPath?) .
 
-    vars U V W : Variable .
     vars E : BCEdge .
+    vars G : BCGraph .
     vars P : BCPath .
+    vars NeP : NeBCPath .
+    vars S : BCSimpleSet .
+    vars U V : Variable .
 
-    op _>bc*_in_ : Variable Variable BCPath -> Bool .
-    eq U >bc* V in P = U == V or-else U >bc+ V in P .
+    op isBcPath : BCPath -> Bool .
+    ceq isBcPath(E P) = $isBcPath(U, E P)
+        if s(U, V) := nodes(E) /\ U >bc V in E .
+    eq isBcPath(P) = false [owise] .
 
-    op _>bc+_in_ : Variable Variable BCPath -> Bool .
-    ceq U >bc+ V in E P = U >bc W in E and-then (W == V or-else W >bc+ V in P)
-        if s(U, W) := nodes(E) .
+    op $isBcPath : Variable BCPath -> Bool .
+    ceq $isBcPath(U, E NeP) = U >bc V in E and-then $isBcPath(V, NeP)
+        if s(U, V) := nodes(E) .
+    ceq $isBcPath(U, E) = U >bc V in E
+        if s(U, V) := nodes(E) .
+    eq $isBcPath(U, emptypath) = false .
+
+    op isLPath : BCPath -> Bool .
+    eq isLPath(E P) = isCons(E) or-else (isBc(E) and-then isLPath(P)) .
+    eq isLPath(emptypath) = false .
+
+    op hasBcCycle : BCGraph -> Bool .
+    eq hasBcCycle(G) = hasCycle(G, upModule('BC-GRAPH, false), 'isBcPath[[]]) .
+
+    op hasLCycle : BCGraph -> Bool .
+    eq hasLCycle(G) = hasCycle(G, upModule('BC-GRAPH, false), 'isLPath[[]]) .
 endfm
 

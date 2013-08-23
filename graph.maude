@@ -1,3 +1,6 @@
+load apply
+load tools
+
 fth EDGE is
     protecting BOOL .
 
@@ -126,17 +129,23 @@ fmod GRAPH{E :: EDGE} is
                      -> Path?{E} .
     ceq $findNePath(NS, NC, ND, P, GL, G, SKIP) =
         $findNePath(NS, N, ND, P E, (GL ; G'), G'', SKIP)
-        if NC =/= ND /\ E || G' := getSubgraphFrom(NC, G)
+        if NC =/= ND or P == emptypath
+        /\ E || G' := getSubgraphFrom(NC, G)
         /\ s(NC, N, S) := nodes(E) /\ from(E, NC) /\ to(E, N)
-        /\ E || G'' := G .
+        /\ E || G'' := G
+        [print "NS=" NS " NC=" NC " ND=" ND " Edge=" E " Subgraph=" G'] .
     ceq $findNePath(NS, NC, ND, P, GL, G, SKIP) =
         $revertNePath(NS, NC, ND, P, GL, G, SKIP)
-        if NC =/= ND /\ emptygraph := getSubgraphFrom(NC, G) .
-    eq $findNePath(NS, ND, ND, P, GL, G, SKIP) =
+        if NC =/= ND or P == emptypath
+        /\ emptygraph := getSubgraphFrom(NC, G)
+        [print "NS=" NS " NC=" NC " ND=" ND] .
+    ceq $findNePath(NS, ND, ND, P, GL, G, SKIP) =
         if SKIP == 0
             then P
             else $revertNePath(NS, ND, ND, P, GL, G, sd(SKIP, 1))
-        fi .
+        fi
+        if P =/= emptypath
+        [print "NS=" NS " NC=" ND " ND=" ND " -- Solution found: SKIP=" SKIP] .
 
     op $revertNePath : E$Node E$Node E$Node Path{E} GraphList{E} Graph{E} Nat
                        -> Path?{E} .
@@ -144,20 +153,78 @@ fmod GRAPH{E :: EDGE} is
         $findNePath(NS, N2, ND, P E', (GL ; G'), G'', SKIP)
         if s(N1, NC, S1) := nodes(E) /\ s(N1, N2, S2) := nodes(E')
         /\ from(E, N1) /\ from(E', N1) /\ to(E', N2)
-        /\ E' || G'' := G || E .
+        /\ E' || G'' := G || E
+        [print "Revert: Trying other edges..."] .
     ceq $revertNePath(NS, NC, ND, P E, (GL ; emptygraph), G, SKIP) =
         $revertNePath(NS, N, ND, P, GL, G || E, SKIP)
-        if s(N, NC, S) := nodes(E) /\ from(E, N) .
-    eq $revertNePath(NS, NC, ND, P, nil, G, SKIP) = noPath .
+        if s(N, NC, S) := nodes(E) /\ from(E, N)
+        [print "Revert: Backtracking..."] .
+    eq $revertNePath(NS, NC, ND, P, nil, G, SKIP) = noPath
+        [print "Revert: Failing!"] .
 endfm
 
 
 fmod META-GRAPH{E :: EDGE} is
+    protecting APPLY .
     protecting GRAPH{E} .
     protecting META-LEVEL .
+    protecting NAT-UTILS .
 
-    op findPath : E$Node E$Node Graph{E} Qid Nat -> Path?{E} .
-    op findNePath : E$Node E$Node Graph{E} Qid Nat -> Path?{E} .
+    vars N N1 N2 : E$Node .
+    vars S : E$NodeSet .
+    vars G : Graph{E} .
+    vars CTX : Context .
+    vars SKIP BIGSKIP : Nat .
+    vars PATH : Path{E} .
+    vars PATH? : Path?{E} .
+    vars RESULT : ResultPair .
+    vars MOD : Module .
+    vars EOK : Bool .
+    vars T : Term .
+
+
+    op hasCycle : Graph{E} Module Context -> Bool .
+    ceq hasCycle(G, MOD, CTX) = true
+        if s(N, S) := graphnodes(G)
+        /\ noPath =/= findNePath(N, N, G, MOD, CTX, 0) .
+    eq hasCycle(G, MOD, CTX) = false [owise] .
+
+
+    op findPath : E$Node E$Node Graph{E} Module Context Nat -> Path?{E} .
+    eq findPath(N1, N2, G, MOD, CTX, BIGSKIP) =
+        $findPath(N1, N2, G, MOD, CTX, 0, BIGSKIP, true) .
+
+    op findNePath : E$Node E$Node Graph{E} Module Context Nat -> Path?{E} .
+    eq findNePath(N1, N2, G, MOD, CTX, BIGSKIP) =
+        $findPath(N1, N2, G, MOD, CTX, 0, BIGSKIP, false) .
+
+
+    op $findPath : E$Node E$Node Graph{E} Module Context Nat Nat Bool
+                   -> Path?{E} .
+    ceq $findPath(N1, N2, G, MOD, CTX, SKIP, BIGSKIP, EOK) =
+        if PATH? :: Path{E}
+            then if $checkPath(MOD, CTX, PATH?)
+                then if BIGSKIP == 0
+                    then PATH?
+                    else $findPath(N1, N2, G, MOD, CTX, SKIP + 1,
+                                   dec(BIGSKIP), EOK)
+                fi
+                else $findPath(N1, N2, G, MOD, CTX, SKIP + 1, BIGSKIP, EOK)
+            fi
+            else noPath
+        fi
+        if PATH? :=
+            if EOK
+                then findPath(N1, N2, G, SKIP)
+                else findNePath(N1, N2, G, SKIP)
+            fi .
+
+    op $checkPath : Module Context Path{E} -> Bool .
+    ceq $checkPath(MOD, CTX, PATH) =
+        downTerm(getTerm(metaRewrite(MOD, CTX[upTerm(PATH)], unbounded)),
+                 false)
+        if T := CTX[upTerm(PATH)]
+        [print "Checking T=" T] .
 endfm
 
 
@@ -175,8 +242,9 @@ fmod SIMPLE-SET{X :: TRIV} is
 endfm
 
 fmod QID-EDGE is
-    protecting SIMPLE-SET{Qid} * (sort SimpleSet{Qid} to QidSet,
-                                  sort NeSimpleSet{Qid} to NeQidSet) .
+    --- Use this because META-LEVEL does.
+    protecting QID-SET * (op empty to none,
+                          op _,_ to _;_ [prec 43]) .
 
     sorts QidEdge .
 
@@ -195,8 +263,8 @@ fmod QID-EDGE is
     eq to(qe(Q1, Q2, Q3), Q4) = Q2 == Q4 .
 
     op nodes : QidEdge -> NeQidSet .
-    eq nodes(qe(Q1, Q2)) = s(Q1, Q2) .
-    eq nodes(qe(Q1, Q2, Q3)) = s(Q1, Q2) .
+    eq nodes(qe(Q1, Q2)) = Q1 ; Q2 .
+    eq nodes(qe(Q1, Q2, Q3)) = Q1 ; Q2 .
 endfm
 
 view QidEdge from EDGE to QID-EDGE is
@@ -204,6 +272,9 @@ view QidEdge from EDGE to QID-EDGE is
     sort Edge to QidEdge .
     sort NodeSet to QidSet .
     sort NeNodeSet to NeQidSet .
+
+    op emptyset to none .
+    op s to _;_ .
 endv
 
 fmod QID-GRAPH is
