@@ -1,19 +1,20 @@
-fmod GCONTEXT is
+fmod CAP is
     protecting META-TERM .
 
-    sorts GContext NeGContext NeGTermList .
-    subsorts Term Context < GContext .
-    subsorts NeTermList NeCTermList < NeGTermList < GTermList .
+    sorts Cap NeCapList NeGTermList .
+    subsorts Context < Cap NeCTermList < NeCapList .
+    subsorts NeTermList NeCapList < NeGTermList < GTermList .
 
-    op _[_] : Qid GTermList -> GContext [ctor ditto] .
+    op _[_] : Qid NeCapList -> Cap .
 
-    op _,_ : GTermList NeGTermList -> NeGTermList [ctor ditto] .
-    op _,_ : NeGTermList GTermList -> NeGTermList [ctor ditto] .
+    op _,_ : NeCapList TermList -> NeCapList [ctor ditto] .
+    op _,_ : TermList NeCapList -> NeCapList [ctor ditto] .
+    op _,_ : NeCapList NeCapList -> NeCapList [ctor ditto] .
 
     vars GTL : GTermList .
     vars NeGTL : NeGTermList .
     vars T : Term .
-    vars GC : GContext .
+    vars C : Cap .
     vars F : Qid .
     vars A : Constant .
     vars V : Variable .
@@ -24,47 +25,50 @@ fmod GCONTEXT is
     eq countHoles(V) = 0 .
     eq countHoles(A) = 0 .
     eq countHoles(F[GTL]) = countHoles(GTL) .
-    eq countHoles((GC, NeGTL)) = countHoles(GC) + countHoles(NeGTL) .
+    eq countHoles((T, NeGTL)) = countHoles(T) + countHoles(NeGTL) .
+    eq countHoles((C, NeGTL)) = countHoles(C) + countHoles(NeGTL) .
     eq countHoles(empty) = 0 .
 
     op listSize : GTermList -> Nat .
     eq listSize((T, GTL)) = 1 + listSize(GTL) .
+    eq listSize((C, GTL)) = 1 + listSize(GTL) .
     eq listSize(empty) = 0 .
 endfm
 
 fmod APPLY is
-    protecting GCONTEXT .
+    protecting CAP .
     protecting META-TERM .
     protecting NAT .
 
-    vars C C' : Context .
-    vars CTL : NeCTermList .
+    vars C : Cap .
+    vars CL : NeCapList .
     vars GTL GTL' GTL'' GTL''' : GTermList .
     vars NeGTL : NeGTermList .
-    vars T T' : Term .
-    vars GC : GContext .
-    vars TL : TermList .
+    vars T : Term .
     vars F : Qid .
     vars SUB : Substitution .
     vars A : Constant .
     vars V : Variable .
     vars N : Nat .
 
-    --- op _[_] : GContext GTermList -> [GContext] .
+    op _[_] : Cap GTermList -> [Cap] .
+    op _[_] : Context Cap -> Cap .
     op _[_] : Context Term -> Term .
     op _[_] : Context Context -> Context .
 
-    eq [][GC] = GC .
-    ceq F[GTL][GTL'] = F[applyContext(GTL, GTL')]
-        if countHoles(GTL) = listSize(GTL') .
+    eq [][T] = T .
+    eq [][C] = C .
+    ceq F[CL][GTL] = F[applyContext(CL, GTL)]
+        if countHoles(CL) = listSize(GTL) .
 
+    op applyContext : GTermList GTermList -> [GTermList] .
+    op applyContext : NeCTermList Cap -> NeCapList .
     op applyContext : NeCTermList Term -> TermList .
     op applyContext : NeCTermList Context -> NeCTermList .
-    op applyContext : GTermList GTermList -> [GTermList] .
 
     eq applyContext((T, GTL), GTL') = T, applyContext(GTL, GTL') .
-    ceq applyContext((GC, GTL), GTL') = GC[GTL''], applyContext(GTL, GTL''')
-        if not (GC :: Term) /\ N := countHoles(GC)
+    ceq applyContext((C, GTL), GTL') = C[GTL''], applyContext(GTL, GTL''')
+        if not (C :: Term) /\ N := countHoles(C)
         /\ GTL'' := take(GTL', N) /\ GTL''' := skip(GTL', N) .
     eq applyContext(empty, empty) = empty .
 
@@ -77,9 +81,9 @@ fmod APPLY is
     eq skip(GTL, 0) = GTL .
 
 
+    op _[_] : Substitution Cap -> Cap .
     op _[_] : Substitution Term -> Term .
     op _[_] : Substitution Context -> Context .
-    op _[_] : Substitution GContext -> GContext .
 
     eq SUB[A] = A .
     eq SUB[[]] = [] .
@@ -90,7 +94,8 @@ fmod APPLY is
     eq SUB[F[GTL]] = F[applySubst(SUB, GTL)] .
 
     op applySubst : Substitution GTermList -> GTermList .
-    eq applySubst(SUB, (GC, GTL)) = SUB[GC], applySubst(SUB, GTL) .
+    eq applySubst(SUB, (T, GTL)) = SUB[T], applySubst(SUB, GTL) .
+    eq applySubst(SUB, (C, GTL)) = SUB[C], applySubst(SUB, GTL) .
     eq applySubst(SUB, empty) = empty .
 endfm
 

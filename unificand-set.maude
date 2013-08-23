@@ -10,20 +10,48 @@ fmod UNIFICAND-SET is
     *** desired -- namely a unit.
 
     sorts UnificandSet EmptyUnificandSet NeUnificandSet .
-    subsorts UnificandPair < EmptyUnificandSet NeUnificandSet < UnificandSet .
+    subsorts EmptyUnificandSet < UnificandSet .
+    subsorts UnificandPair < NeUnificandSet < UnificandSet .
+
+    sorts StUnificandPair .
+    subsorts StUnificandPair < UnificandPair .
+
+    sorts StUnificandSet NeStUnificandSet .
+    subsorts EmptyUnificandSet < StUnificandSet .
+    subsorts NeStUnificandSet < NeUnificandSet .
+    subsorts StUnificandPair < NeStUnificandSet < StUnificandSet < UnificandSet .
 
     *** Constructors
+    op _=?_ : [Term] [Term] -> [StUnificandPair] [ctor ditto] .
+
     op empty : -> EmptyUnificandSet [ctor] .
     op _&_ : UnificandSet UnificandSet -> UnificandSet
         [ctor assoc comm id: empty prec 80] .
     op _&_ : NeUnificandSet UnificandSet -> NeUnificandSet
         [ctor ditto] .
+    op _&_ : StUnificandSet StUnificandSet -> StUnificandSet
+        [ctor ditto] .
+    op _&_ : NeStUnificandSet StUnificandSet -> NeStUnificandSet
+        [ctor ditto] .
 
     vars T T1 T2 : Term .
+    vars TL : TermList .
     vars PROB : UnificationProblem .
     vars EQ : UnificandSet .
     vars NEQ : NeUnificandSet .
-    vars U : Variable .
+    vars U V : Variable .
+    vars C : Constant .
+    vars F : Qid .
+
+    *** Specify which equations are in standard form.
+    mb U =? V : StUnificandPair .
+    cmb U =? F[TL] : StUnificandPair if isVarList(TL) .
+
+    *** Check if a term list contains only variables.
+    op isVarList : TermList -> Bool .
+    eq isVarList((V, TL)) = isVarList(TL) .
+    eq isVarList((C, TL)) = false .
+    eq isVarList(empty) = true .
 
     *** Convert a unification problem to a (nicer to work with) unificand set.
     op problemToSet : UnificationProblem -> UnificandSet .

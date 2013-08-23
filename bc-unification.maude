@@ -2,6 +2,23 @@ load graph
 load inference
 load unificand-set
 
+fth BC is
+    --- Sorts for element and list are assumed to be completely disjoint.
+    sorts Elt List .
+
+    op cons : Elt List -> List .
+    op nil : -> List .
+    op bc : List Elt -> List .
+    op h : Elt Elt -> Elt .
+
+    vars X Z : Elt .
+    vars Y : List .
+
+    --- The axioms of BC. They form a canonical rewrite system.
+    eq bc(nil, Z) = nil [nonexec] .
+    eq bc(cons(X, Y), Z) = cons(h(X, Z), bc(Y, h(X, Z)) [nonexec] .
+endfth
+
 fmod BC-SIGNATURE is
     protecting META-LEVEL .
     protecting UNIFICAND-SET .
@@ -143,7 +160,7 @@ mod BC-INFERENCE is
 
     *** This helper function is defined over our more usable unificand
     *** sets.
-    op bc-infer : UnificandSet BCSignature Nat -> UnificationPair? .
+    op bc-infer : StUnificandSet BCSignature Nat -> UnificationPair? .
 
     rl [rep-elim] :
         bc-infer(U =? T & U =? T & EQ, BC H CONS NIL ELT LIST, N)
