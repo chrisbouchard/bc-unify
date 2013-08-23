@@ -246,7 +246,11 @@ fmod QID-EDGE is
     protecting QID-SET * (op empty to none,
                           op _,_ to _;_ [prec 43]) .
 
-    sorts QidEdge .
+    sorts QidEdge Qid? .
+
+    subsorts Qid < Qid? .
+
+    op unlabelled : -> Qid? .
 
     op qe : Qid Qid -> QidEdge [ctor] .
     op qe : Qid Qid Qid -> QidEdge [ctor] .
@@ -261,6 +265,10 @@ fmod QID-EDGE is
     op to : QidEdge Qid -> Bool .
     eq to(qe(Q1, Q2), Q4) = Q2 == Q4 .
     eq to(qe(Q1, Q2, Q3), Q4) = Q2 == Q4 .
+
+    op label : QidEdge -> Qid? .
+    eq label(qe(Q1, Q2)) = unlabelled .
+    eq label(qe(Q1, Q2, Q3)) = Q3 .
 
     op nodes : QidEdge -> NeQidSet .
     eq nodes(qe(Q1, Q2)) = Q1 ; Q2 .

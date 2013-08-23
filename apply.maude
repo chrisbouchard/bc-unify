@@ -1,7 +1,7 @@
 fmod GCONTEXT is
     protecting META-TERM .
 
-    sorts GContext NeGTermList .
+    sorts GContext NeGContext NeGTermList .
     subsorts Term Context < GContext .
     subsorts NeTermList NeCTermList < NeGTermList < GTermList .
 
@@ -9,6 +9,27 @@ fmod GCONTEXT is
 
     op _,_ : GTermList NeGTermList -> NeGTermList [ctor ditto] .
     op _,_ : NeGTermList GTermList -> NeGTermList [ctor ditto] .
+
+    vars GTL : GTermList .
+    vars NeGTL : NeGTermList .
+    vars T : Term .
+    vars GC : GContext .
+    vars F : Qid .
+    vars A : Constant .
+    vars V : Variable .
+    vars N : Nat .
+
+    op countHoles : GTermList -> Nat .
+    eq countHoles([]) = 1 .
+    eq countHoles(V) = 0 .
+    eq countHoles(A) = 0 .
+    eq countHoles(F[GTL]) = countHoles(GTL) .
+    eq countHoles((GC, NeGTL)) = countHoles(GC) + countHoles(NeGTL) .
+    eq countHoles(empty) = 0 .
+
+    op listSize : GTermList -> Nat .
+    eq listSize((T, GTL)) = 1 + listSize(GTL) .
+    eq listSize(empty) = 0 .
 endfm
 
 fmod APPLY is
@@ -29,13 +50,13 @@ fmod APPLY is
     vars V : Variable .
     vars N : Nat .
 
-    op _[_] : GContext GTermList -> [GContext] .
+    --- op _[_] : GContext GTermList -> [GContext] .
     op _[_] : Context Term -> Term .
     op _[_] : Context Context -> Context .
 
     eq [][GC] = GC .
     ceq F[GTL][GTL'] = F[applyContext(GTL, GTL')]
-        if contextCount(GTL) = listSize(GTL') .
+        if countHoles(GTL) = listSize(GTL') .
 
     op applyContext : NeCTermList Term -> TermList .
     op applyContext : NeCTermList Context -> NeCTermList .
@@ -43,17 +64,9 @@ fmod APPLY is
 
     eq applyContext((T, GTL), GTL') = T, applyContext(GTL, GTL') .
     ceq applyContext((GC, GTL), GTL') = GC[GTL''], applyContext(GTL, GTL''')
-        if not (GC :: Term) /\ N := contextCount(GC)
+        if not (GC :: Term) /\ N := countHoles(GC)
         /\ GTL'' := take(GTL', N) /\ GTL''' := skip(GTL', N) .
     eq applyContext(empty, empty) = empty .
-
-    op contextCount : GTermList -> Nat .
-    eq contextCount([]) = 1 .
-    eq contextCount(V) = 0 .
-    eq contextCount(A) = 0 .
-    eq contextCount(F[GTL]) = contextCount(GTL) .
-    eq contextCount((GC, NeGTL)) = contextCount(GC) + contextCount(NeGTL) .
-    eq contextCount(empty) = 0 .
 
     op take : GTermList Nat -> GTermList .
     eq take((T, GTL), s N) = T, take(GTL, N) .
@@ -62,10 +75,6 @@ fmod APPLY is
     op skip : GTermList Nat -> GTermList .
     eq skip((T, GTL), s N) = skip(GTL, N) .
     eq skip(GTL, 0) = GTL .
-
-    op listSize : GTermList -> Nat .
-    eq listSize((T, GTL)) = 1 + listSize(GTL) .
-    eq listSize(empty) = 0 .
 
 
     op _[_] : Substitution Term -> Term .

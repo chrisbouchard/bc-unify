@@ -34,112 +34,6 @@ fmod BC-UNIFICATION is
                  (noUnifier).UnificationPair?) .
 endfm
 
-mod BC-INFERENCE is
-    protecting BC-GRAPH .
-    protecting BC-SIGNATURE .
-    protecting UNIFICAND-SET .
-
-    vars N : Nat .
-    vars EQ : UnificandSet .
-
-    vars T T1 T2 : Term .
-    vars U V W X Y Z : Variable .
-    vars U' U'' V' X' X'' : Variable .
-    vars BC H CONS : Qid .
-    vars NIL : Constant .
-    vars ELT LIST : Type .
-
-    *** This helper function is defined over our more usable unificand
-    *** sets.
-    op bc-infer : UnificandSet BCSignature Nat -> UnificationPair? .
-
-    rl [rep-elim] :
-        bc-infer(U =? T & U =? T & EQ, BC H CONS NIL ELT LIST, N)
-        => bc-infer(U =? T & EQ, BC H CONS NIL ELT LIST, N)
-        [metadata "prec 1 det"] .
-
-    rl [triv-elim] :
-        bc-infer(U =? U & EQ, BC H CONS NIL ELT LIST, N)
-        => bc-infer(EQ, BC H CONS NIL ELT LIST, N)
-        [metadata "prec 1 det"] .
-
-    crl [var-elim] :
-        bc-infer(U =? V & EQ, BC H CONS NIL ELT LIST, N)
-        => bc-infer(U =? V & replace(U, V, EQ), BC H CONS NIL ELT LIST, N)
-        if occurs(U, EQ)
-        [metadata "prec 2 det"] .
-
-    rl [cancel-cons] :
-        bc-infer(U =? CONS[V, W] & U =? CONS[X, Y] & EQ,
-                 BC H CONS NIL ELT LIST, N)
-        => bc-infer(U =? CONS[V, W] & X =? V & Y =? W & EQ,
-                    BC H CONS NIL ELT LIST, N)
-        [metadata "prec 3 det"] .
-
-    rl [nil-soln-1] :
-        bc-infer(U =? BC[V, W] & U =? NIL & EQ, BC H CONS NIL ELT LIST, N)
-        => bc-infer(U =? NIL & V =? NIL & EQ, BC H CONS NIL ELT LIST, N)
-        [metadata "prec 4 det"] .
-
-    rl [nil-soln-2] :
-        bc-infer(U =? BC[V, W] & V =? NIL & EQ, BC H CONS NIL ELT LIST, N)
-        => bc-infer(U =? NIL & V =? NIL & EQ, BC H CONS NIL ELT LIST, N)
-        [metadata "prec 4 det"] .
-
-    crl [nil-soln-3] :
-        bc-infer(U =? BC[V, W] & EQ, BC H CONS NIL ELT LIST, N)
-        => bc-infer(U =? NIL & V =? NIL & EQ, BC H CONS NIL ELT LIST, N)
-        if hasBcCycle(buildGraph(EQ, BC H CONS NIL ELT LIST))
-        [metadata "prec 4 det"] .
-
-    rl [semi-cancel-bc] :
-        bc-infer(U =? BC[V, W] & U =? BC[X, W] & EQ, BC H CONS NIL ELT LIST, N)
-        => bc-infer(U =? BC[V, W] & X =? V & EQ, BC H CONS NIL ELT LIST, N)
-        [metadata "prec 5 det"] .
-
-    crl [push-below] :
-        bc-infer(U =? BC[V, W] & U =? BC[X, Y] & EQ,
-                 BC H CONS NIL ELT LIST, N)
-        => bc-infer(U =? CONS[U', U''] & V =? CONS[V', Z] & X =? CONS[X', Z] &
-                    U'' =? BC[Z, U'] & U' =? H[V', W] & U' =? H[X', Y] & EQ,
-                    BC H CONS NIL ELT LIST, N + 5)
-        if false
-        /\ U' := newVar*(N,     ELT) /\ U'' := newVar*(N + 1, LIST)
-        /\ V' := newVar*(N + 2, ELT) /\ Z   := newVar*(N + 3, LIST)
-        /\ X' := newVar*(N + 4, ELT)
-        [metadata "prec 6 det"] .
-
-    crl [splitting] :
-        bc-infer(U =? CONS[V, W] & U =? BC[X, Y] & EQ,
-                 BC H CONS NIL ELT LIST, N)
-        => bc-infer(U =? CONS[V, W] & X =? CONS[X', X''] & V =? H[X', Y] &
-                    W =? BC[X'', V] & EQ,
-                    BC H CONS NIL ELT LIST, N + 2)
-        if X' := newVar*(N, ELT) /\ X'' := newVar*(N + 1, LIST)
-        [metadata "prec 7 det"] .
-
-    rl [size-failure] :
-        bc-infer(U =? CONS[V, W] & U =? NIL & EQ, BC H CONS NIL ELT LIST, N)
-        => noUnifier
-        [metadata "prec 0 det"] .
-
-    crl [cycle-failure] :
-        bc-infer(EQ, BC H CONS NIL ELT LIST, N)
-        => noUnifier
-        if hasLCycle(buildGraph(EQ, BC H CONS NIL ELT LIST))
-        [metadata "prec 0 det"] .
-
-
-    *** Convert a set of unificands into a dependency graph.
-    op buildGraph : UnificandSet BCSignature -> BCGraph .
-    eq buildGraph(U =? CONS[V, W] & EQ, BC H CONS NIL ELT LIST) =
-        bcE(U, W) || buildGraph(EQ, BC H CONS NIL ELT LIST) .
-    eq buildGraph(U =? BC[V, W] & EQ, BC H CONS NIL ELT LIST) =
-        bcE(U, V) || buildGraph(EQ, BC H CONS NIL ELT LIST) .
-    eq buildGraph(U =? T & EQ, BC H CONS NIL ELT LIST) =
-        buildGraph(EQ, BC H CONS NIL ELT LIST) [owise] .
-endm
-
 view Variable from TRIV to META-TERM is
     sort Elt to Variable .
 endv
@@ -224,9 +118,133 @@ fmod BC-GRAPH is
     eq isLPath(emptypath) = false .
 
     op hasBcCycle : BCGraph -> Bool .
-    eq hasBcCycle(G) = hasCycle(G, upModule('BC-GRAPH, false), 'isBcPath[[]]) .
+    eq hasBcCycle(G) = hasCycle(G, ['BC-GRAPH], 'isBcPath[[]]) .
 
     op hasLCycle : BCGraph -> Bool .
-    eq hasLCycle(G) = hasCycle(G, upModule('BC-GRAPH, false), 'isLPath[[]]) .
+    eq hasLCycle(G) = hasCycle(G, ['BC-GRAPH], 'isLPath[[]]) .
 endfm
+
+mod BC-INFERENCE is
+    protecting BC-GRAPH .
+    protecting BC-SIGNATURE .
+    protecting UNIFICAND-SET .
+
+    vars N : Nat .
+    vars EQ : UnificandSet .
+    vars SIG : BCSignature .
+
+    vars T T1 T2 : Term .
+    vars U V W X Y Z : Variable .
+    vars U' U'' V' X' X'' : Variable .
+    vars BC H CONS : Qid .
+    vars NIL : Constant .
+    vars ELT LIST : Type .
+    vars S : QidSet .
+
+    *** This helper function is defined over our more usable unificand
+    *** sets.
+    op bc-infer : UnificandSet BCSignature Nat -> UnificationPair? .
+
+    rl [rep-elim] :
+        bc-infer(U =? T & U =? T & EQ, BC H CONS NIL ELT LIST, N)
+        => bc-infer(U =? T & EQ, BC H CONS NIL ELT LIST, N)
+        [metadata "prec 1 det"] .
+
+    rl [triv-elim] :
+        bc-infer(U =? U & EQ, BC H CONS NIL ELT LIST, N)
+        => bc-infer(EQ, BC H CONS NIL ELT LIST, N)
+        [metadata "prec 1 det"] .
+
+    crl [var-elim] :
+        bc-infer(U =? V & EQ, BC H CONS NIL ELT LIST, N)
+        => bc-infer(U =? V & replace(U, V, EQ), BC H CONS NIL ELT LIST, N)
+        if occurs(U, EQ)
+        [metadata "prec 2 det"] .
+
+    rl [cancel-cons] :
+        bc-infer(U =? CONS[V, W] & U =? CONS[X, Y] & EQ,
+                 BC H CONS NIL ELT LIST, N)
+        => bc-infer(U =? CONS[V, W] & X =? V & Y =? W & EQ,
+                    BC H CONS NIL ELT LIST, N)
+        [metadata "prec 3 det"] .
+
+    rl [nil-soln-1] :
+        bc-infer(U =? BC[V, W] & U =? NIL & EQ, BC H CONS NIL ELT LIST, N)
+        => bc-infer(U =? NIL & V =? NIL & EQ, BC H CONS NIL ELT LIST, N)
+        [metadata "prec 4 det"] .
+
+    rl [nil-soln-2] :
+        bc-infer(U =? BC[V, W] & V =? NIL & EQ, BC H CONS NIL ELT LIST, N)
+        => bc-infer(U =? NIL & V =? NIL & EQ, BC H CONS NIL ELT LIST, N)
+        [metadata "prec 4 det"] .
+
+    crl [nil-soln-3] :
+        bc-infer(U =? BC[V, W] & EQ, BC H CONS NIL ELT LIST, N)
+        => bc-infer(U =? NIL & V =? NIL & EQ, BC H CONS NIL ELT LIST, N)
+        if hasBcCycle(buildGraph(EQ, BC H CONS NIL ELT LIST))
+        [metadata "prec 4 det"] .
+
+    rl [semi-cancel-bc] :
+        bc-infer(U =? BC[V, W] & U =? BC[X, W] & EQ, BC H CONS NIL ELT LIST, N)
+        => bc-infer(U =? BC[V, W] & X =? V & EQ, BC H CONS NIL ELT LIST, N)
+        [metadata "prec 5 det"] .
+
+    crl [push-below] :
+        bc-infer(U =? BC[V, W] & U =? BC[X, Y] & EQ,
+                 BC H CONS NIL ELT LIST, N)
+        => bc-infer(U =? CONS[U', U''] & V =? CONS[V', Z] & X =? CONS[X', Z] &
+                    U'' =? BC[Z, U'] & U' =? H[V', W] & U' =? H[X', Y] & EQ,
+                    BC H CONS NIL ELT LIST, N + 5)
+        if U in nonnil(U =? BC[V, W] & U =? BC[X, Y] & EQ,
+                       BC H CONS NIL ELT LIST)
+        /\ U' := newVar*(N,     ELT) /\ U'' := newVar*(N + 1, LIST)
+        /\ V' := newVar*(N + 2, ELT) /\ Z   := newVar*(N + 3, LIST)
+        /\ X' := newVar*(N + 4, ELT)
+        [metadata "prec 6 det"] .
+
+    crl [splitting] :
+        bc-infer(U =? CONS[V, W] & U =? BC[X, Y] & EQ,
+                 BC H CONS NIL ELT LIST, N)
+        => bc-infer(U =? CONS[V, W] & X =? CONS[X', X''] & V =? H[X', Y] &
+                    W =? BC[X'', V] & EQ,
+                    BC H CONS NIL ELT LIST, N + 2)
+        if X' := newVar*(N, ELT) /\ X'' := newVar*(N + 1, LIST)
+        [metadata "prec 7 det"] .
+
+    rl [size-failure] :
+        bc-infer(U =? CONS[V, W] & U =? NIL & EQ, BC H CONS NIL ELT LIST, N)
+        => noUnifier
+        [metadata "prec 0 det"] .
+
+    crl [cycle-failure] :
+        bc-infer(EQ, BC H CONS NIL ELT LIST, N)
+        => noUnifier
+        if hasLCycle(buildGraph(EQ, BC H CONS NIL ELT LIST))
+        [metadata "prec 0 det"] .
+
+
+    *** Convert a set of unificands into a dependency graph.
+    op buildGraph : UnificandSet BCSignature -> BCGraph .
+    eq buildGraph(U =? CONS[V, W] & EQ, BC H CONS NIL ELT LIST) =
+        bcE(U, W) || buildGraph(EQ, BC H CONS NIL ELT LIST) .
+    eq buildGraph(U =? BC[V, W] & EQ, BC H CONS NIL ELT LIST) =
+        bcE(U, V) || buildGraph(EQ, BC H CONS NIL ELT LIST) .
+    eq buildGraph(U =? T & EQ, BC H CONS NIL ELT LIST) =
+        buildGraph(EQ, BC H CONS NIL ELT LIST) [owise] .
+
+
+    op nonnil : UnificandSet BCSignature -> QidSet .
+    eq nonnil(EQ, SIG) = $nonnil(EQ, none, SIG) .
+
+    op $nonnil : UnificandSet QidSet BCSignature -> QidSet .
+    eq $nonnil(U =? CONS[V, W] & EQ, S, BC H CONS NIL ELT LIST) =
+        $nonnil(EQ, (U ; S), BC H CONS NIL ELT LIST) .
+    ceq $nonnil(U =? BC[V, W] & EQ, S, BC H CONS NIL ELT LIST) =
+        $nonnil(EQ, (U ; V ; W ; S), BC H CONS NIL ELT LIST)
+        if (U in S) or (V in S) or (W in S) .
+    ceq $nonnil(U =? V & EQ, S, BC H CONS NIL ELT LIST) =
+        $nonnil(EQ, (U ; V ; S), BC H CONS NIL ELT LIST)
+        if (U in S) or (V in S) .
+    eq $nonnil(EQ, S, SIG) = S [owise] .
+endm
 
