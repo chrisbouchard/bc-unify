@@ -1,0 +1,14 @@
+load unification .
+
+*** A theory for modules that have a function that behaves like metaUnify.
+fth UNIFICATION-ALGORITHM is
+    protecting META-LEVEL .
+
+    op unify-alg : Module UnificationProblem Nat Nat -> [UnificationPair?] .
+endfth
+
+*** And the corresponding view to metaUnify.
+view MetaUnification from UNIFICATION-ALGORITHM to META-LEVEL is
+    op unify-alg to metaUnify .
+endv
+

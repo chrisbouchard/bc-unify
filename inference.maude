@@ -161,7 +161,7 @@ fmod INFERENCE is
 
     op failure : -> Term? .
 
-    op inferenceRules : Module Term Term Nat -> Term .
+    op inferenceRules : Module Term Term Nat -> [Term] .
     ceq inferenceRules(MOD, T, FAIL, BIGSKIP) =
         $inferenceRules(MOD, DLIST, NDLIST, T, FAIL, nil, 0,
                         maxPrec(DLIST NDLIST), BIGSKIP, false)

@@ -1,0 +1,451 @@
+\documentclass[11pt]{article}
+
+\usepackage{lmodern}
+\usepackage{epsfig}
+\usepackage{amssymb, amsmath, amsthm, amsxtra}
+\usepackage{mathtools}
+\usepackage{graphics, graphicx}
+\usepackage{fancyhdr, fancyvrb}
+\usepackage{proof}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{color}
+\usepackage{authblk}
+\usepackage{url}
+\usepackage[sectionbib,sort]{natbib}
+\usepackage{enumerate}
+\usepackage{multicol}
+\usepackage{listings}
+\usepackage{fancybox}
+
+\newcommand{\ueq}{=_{}^?}
+\newcommand{\compcirc}{\, {\scriptstyle{\circ}} \,}
+
+\newcommand{\A}{\mathcal{A}}
+\newcommand{\E}{\mathcal{E}}
+\newcommand{\T}{\mathcal{T}}
+\newcommand{\X}{\mathcal{X}}
+\newcommand{\K}{\mathcal{K}}
+\newcommand{\R}{\mathcal{R}}
+\newcommand{\p}{\mathcal{P}}
+\newcommand{\h}{\mathcal{H}}
+
+\newcommand{\Nat}{\mathbb{N}}
+
+\newcommand{\BC}{\mathcal{BC}}
+\newcommand{\HH}{\mathcal{H}}
+\newcommand{\EQ}{\mathcal{EQ}}
+\newcommand{\Pos}{\mathcal{P}\!os}
+\newcommand{\FPos}{\mathcal{FP\!}os}
+\newcommand{\Var}{\mathcal{V}\!ar}
+
+\newcommand{\Elt}{\mathrm{Elt}}
+\newcommand{\List}{\mathrm{List}}
+
+\newcommand{\Bc}{\mathit{bc}}
+\newcommand{\Hh}{\mathit{h}}
+\newcommand{\Cons}{\mathit{cons}}
+\newcommand{\Nil}{\mathit{nil}}
+
+\newcommand{\Nonnil}{\mathbf{nonnil}}
+
+\DeclareMathOperator{\Gr}{\mathit{Gr}}
+\DeclareMathOperator{\Mgu}{\mathit{mgu}}
+
+\newcommand{\Reduced}[1]{#1 \negmedspace\downarrow}
+\newcommand{\Sub}[2]{{\left.{#1}\right|_{#2}^{}}}
+
+% Default to setting ML in listings
+\lstset{
+    basicstyle=\ttfamily
+}
+
+% Definition of Maude for lstlistings
+\lstdefinelanguage{Maude}
+{
+    alsoletter={\:},
+    morecomment=[l]{---},
+    morecomment=[l]{***},
+    keywords={in, load, pr, protecting, sort, sorts, subsort, subsorts, including, class, msg, msgs, endfm, fmod, is, mod, endm, omod, endom},
+    keywords=[2]{eq,  mb, ceq, if, rl, crl, else, then, fi},
+    keywords=[3]{ctor, assoc, comm, gather, id\:},
+    keywords=[4]{op, ops, var, vars},
+    keywords=[5]{=, =>, ==, =/=}
+}
+
+\makeatletter
+\newenvironment{CenteredBox}{%
+\begin{Sbox}}{% Save the content in a box
+\end{Sbox}\centerline{\parbox{\wd\@Sbox}{\TheSbox}}}% And output it centered
+\makeatother
+
+\setlength{\textheight}{8.5in}
+\setlength{\columnsep}{2.0pc}
+\setlength{\textwidth}{6.75in}
+\setlength{\topmargin}{0.25in}
+\setlength{\headheight}{0.0in}
+\setlength{\headsep}{0.0in}
+\setlength{\parskip}{0.05in}
+\setlength{\oddsidemargin}{-.15in}
+\setlength{\parindent}{1pc}
+
+\pagestyle{plain}
+
+\title{Implementing Unification modulo Chaining}
+\author{Christopher Bouchard}
+\date{\today}
+
+\pagenumbering{roman}
+
+\begin{document}
+\begin{titlepage}
+    {\vspace*{-1in}\hspace*{-.5in}
+    \parbox{7.25in}{
+    \setlength{\baselineskip}{13pt}
+    \makebox{\ } \hfill {\footnotesize College of Computing and Information} \\
+    \makebox{\ } \hfill {\footnotesize Computer Science Department} \\
+    \makebox{\ } \\
+    \\
+    }
+    \vspace{-.95in}}
+
+    \epsfxsize=3.15in
+    \epsfclipon
+    \hspace{-0.5in}{\raggedright{
+    \epsffile{logo_A2_pms124_269.eps}
+    }}
+
+    \vspace*{2in}
+
+    \begin{center}
+    \textbf{\huge Implementing Unification modulo Chaining} \\[+15pt]
+    \textbf{(Master's Project)}
+    \par\end{center}
+
+    \vspace{2in}
+
+    \begin{center}
+    \textbf{\large Christopher Bouchard}\\
+
+    \par\end{center}{\large \par}
+
+    \begin{center}
+    \textbf{\large \vspace{0.5in}
+    Advisor: Paliath Narendran }\textbf{ }
+    \par\end{center}
+\end{titlepage}
+
+\begin{center}
+    \textbf{Abstract}
+\end{center}
+\begin{quotation}
+Equational unification is an important research area with many applications,
+such as cryptographic protocol analysis, automated theorem proving, and
+automated reasoning. In ``Unification modulo Chaining'', the authors present an
+algorithm for solving unification problems modulo a theory of chaining. The
+algorithm is modular in the sense that it does not depend on the interpretation
+of the elements in the lists, but is instead parameterized by a suitable
+element unification algorithm. We present an implementation of this algorithm
+in the Maude programming language.
+
+\medskip{}
+\textit{Keywords:} Block chaining, Equational unification, Protocol analysis,
+Term rewriting, Undecidability.
+\end{quotation}
+
+\newpage
+
+\begin{center}
+    \textbf{Acknowledgements}
+\end{center}
+\begin{quotation}
+I would first like to thank my advisor, Paliath Narendran. It is due to his
+guidance and insight that I chose not only this line of research, but to enter
+the Ph.D.\ program in the first place.
+I would like to thank my coauthors on ``Unification modulo Chaining,'' Siva
+Anantharaman, Dr.\ Narendran, and Micha\"{e}l Rusinowitch, for their patience
+and expertise while I learned the ropes of academic writing.
+
+I would like to thank my academic brothers, Andrew Marshall and Serdar Erbatur,
+for taking the time to mentor and encourage a first year grad student. I now
+\emph{fully} understand how busy they must have been.
+I would also like to thank my friends and teammates, Kim Gero, Peter Hibbs, and
+Andrew ``Basil'' Matusiewicz, for making this department a place that I look
+forward to going every day. I do not think I could have made it this far
+without their camaraderie.
+
+I would like to thank my parents for their continued support.
+And I would like to thank my girlfriend, Mary Ferro, for more than I can say.
+Her love and belief in me when I had lost my confidence have kept me going, and
+her wonderful imagination has kept from straying \emph{too} close to sanity.
+\end{quotation}
+
+\newpage
+
+\tableofcontents
+
+\newpage
+\pagenumbering{arabic}
+
+\section{Introduction}
+
+Equational unification is an important research area with many applications in
+cryptographic protocol analysis, automated theorem proving, and automated
+reasoning. One such application in protocol analysis is the study of a
+technique called \emph{block chaining} in which one encrypts blocks of a
+message by masking the current block with the previous encrypted block, then
+applying the encryption function to the result. This forces an attacker to
+decrypt all previous blocks before decripting a later block, preventing him or
+her from attacking individual blocks in parallel.
+
+In ``Unification modulo Chaining'', the authors present an algorithm for
+solving unification problems modulo a general theory of \emph{chaining}, then
+show how this can be used to solve problems modulo block chaining in specific.
+
+The notion of chaining corresponds performing a right fold of a list, but
+keeping the partial results. In ML, such a function might look like:
+\begin{lstlisting}[language=ML]
+       fun chain f z [] = []
+         | chain f z (x::ls) = f (z,x) :: chain f (f (z,x)) ls;
+\end{lstlisting}
+Note that the function \lstinline|chain| is a higher-order function, taking as
+its first argument a function \lstinline|f|. Since we are interested in
+first-order unification, we will generally consider chaining with a fixed
+function.
+
+\section{Notation and Preliminaries}
+
+We consider rewrite systems over ranked signatures, usually denoted $\Sigma$,
+and a possibly infinite set of variables, usually denoted $\X$. We assume the
+reader is familiar with the usual notions and concepts in term rewriting
+systems~\cite{Term} and equational unification~\cite{BaaderSnyd-01}. The set of
+all terms over~$\Sigma$ and~$\X$ is denoted as $T(\Sigma, \X)$. Given a term
+$t$, we denote by $\Pos(t)$ the set of all positions in $t$, and by $\FPos(t)$
+the set of all non-variable positions in $t$. An \emph{equation}, e.g. in
+\cite{Term} is an ordered pair of terms $(s, \, t)$, usually written as $s
+\approx t$. Here $s$~is the \emph{left-hand side} and $t$~is the \emph{right-hand side} of
+the equation~\cite{Term}. A \emph{rewrite rule} is an equation $s \approx t$ where
+$\Var(s) \supseteq \Var(t)$, usually written as~$s \to t$. A \emph{term rewriting
+system} is a set of rewrite rules.
+
+\subsection{Many-Sorted Signature}
+
+In this paper, we consider unification modulo a many-sorted algebra, with sorts
+$\Elt$ and $\List$ representing elements and lists, respectively.\footnote{In
+``Unification modulo Chaining'', the names $\tau_e$ and $\tau_l$ are used for
+$\Elt$ and $\List$, respectively.} Each function symbol in $\Sigma$ has an
+associated type signature, and terms that are not well-typed are considered
+syntactically invalid. The function symbols and their type signatures are given
+below:
+\begin{align*}
+    \Bc \colon &\List \times \Elt \to \List &
+    \Cons \colon &\Elt \times \List \to \List \\
+    \Hh \colon &\Elt \times \Elt \to \Elt &
+    \Nil \colon &\List
+\end{align*}
+Additionally, the set of variables $\X$ is partitioned into two disjoint subsets,
+$\X_E$ and $\X_L$, containing the variables of sorts $\Elt$ and $\List$, respectively.
+We will use lower case names (e.g., $u$, $v$, $w$) for variables in $\X_E$, and
+uppercase names (e.g., $U$, $V$, $W$) for variables in $\X_L$. In general, variable
+names will use letters later in the alphabet.
+
+\subsection{Standard Form}
+
+The algorithm assumes that the unification problem is given in \emph{standard form},
+in which each equation has one of the following forms:
+\begin{enumerate}[(i)]
+    \item $U \ueq V$, where $U$ and $V$ are variables of the same sort
+    \item $U \ueq f(V_1, \dotsc, V_n)$, where $U$ and $V_1$ through $V_n$ are
+        variables and $f$ has the correct arity (with respect to number and sorts
+        of its arguments)
+\end{enumerate}
+Any unification problem $\p$ can be transformed into a unification problem
+$\p'$ in standard form such that unifiability is preserved and any unifier of
+$\p'$ is a unifier of $\p$. Doing so need only introduce a number of new variables
+linear in the size of the input problem.
+
+\section{The Theory of Chaining ($\BC$)}
+
+The theory of chaining, $\BC$ (for ``block chaining''), is given by the
+following two axioms:
+\begin{align*}
+    \Bc(\Nil, z) &\approx \Nil \\
+    \Bc(\Cons(x, Y), z) &\approx \Cons(\Hh(x, z), \Bc(Y, \Hh(x, z)))
+\end{align*}
+The intended meaning is that $\Bc$ represents a chaining function, which chains
+a function symbol $\Hh$ across the list in its first argument. For now the
+symbol $\Hh$ is uninterpreted. The second argument of $\Bc$ contains the
+previous result. The function symbols $\Cons$ and $\Nil$ are the standard list
+constructors.
+
+When oriented from left to right into a rewrite system, $\BC$ is convergent.
+In ``Unification modulo Chaining'', it was shown that unification modulo $\BC$
+is finitary, but not unitary.
+
+\subsection{The Element Theory ($\HH$)}
+
+Since chaining is a higher-order operation, we consider a fixed function $\Hh$.
+We assume there is a theory $\HH$ that interprets $\Hh$, which we call the
+\emph{element theory}. This theory should be non-subterm-collapsing and
+$\Hh$ should be semi-cancellative. A function symbol is semi-cancellative iff
+it has the property that:
+\[ \Hh(t_1, s_1) \approx_\HH^{} \Hh(t_2, s_2) \quad \Rightarrow \quad
+t_1 \approx_\HH^{} t_2 \; \Leftrightarrow \; s_1 \approx_\HH^{} s_2 \]
+
+Two element theories were considered in ``Unification modulo Chaining'': one in
+which $\Hh$ is left uninterpreted, and another in which $\Hh$ is interpreted by
+$\Hh(x, y) = e_k(x \oplus y)$, where $\oplus$ is XOR and $e_k$ is an
+uninterpreted function symbol representing encryption with a fixed key $k$.
+Note that this latter interpretation, combined with $\BC$, is exactly the
+definition of block chaining.
+
+\section{Algorithm for Unification modulo Chaining}
+
+The algorithm in ``Uniication modulo Chaining'' is divided into two phases.
+The first phase is given by a system of inference rules that transform the
+set of list equations into dag-solved form by breaking \emph{peaks} (variables
+equated to two different terms). The second phase uses a provided
+element unification algorithm to find a unifier for the element equations.
+Finally, the unifiers are combined and the result is returned.
+
+\subsection{Inference Rules}\label{subsection:inference}
+
+For our purposes, an \emph{inference rule} is a rule for transforming a set of
+equations, possibly with a condition limiting its application. For example, one
+inference rule from the algorithm looks like:
+\[\infer
+    {\EQ ~ \cup ~ \{ U \ueq cons(v, W), \; x \ueq v, \; Y \ueq W \}}
+    {\EQ ~ \uplus ~ \{ U \ueq cons(v, W), \; U \ueq cons(x, Y) \}}
+\]
+The premise (top) is matched against the current set of equations. If
+the match is successful, the set of equations is replaced by the conclusion
+(bottom), instantiated by the match. The full set of inference rules for the
+algorithm is given in~\ref{appendix:inference}.
+
+\subsection{Dependency Graph}
+
+The algorithm also makes use of a graph structure to detect occur-check failure
+and $\Nil$-solutions. Given a set of equations $\EQ$, the \emph{list dependency
+graph} is a directed graph $G_L(\EQ)$ whose nodes are the variables in $\X_L$ and
+whose edges are given as follows:
+\begin{enumerate}[(i)]
+    \item For each equation $U \ueq \Cons(v, W)$ in $\EQ$, there is a directed
+        edge from $U$ to $W$ labelled $>_{\Cons}$.
+    \item For each equation $U \ueq \Bc(V, w)$ in $\EQ$, there is a directed
+        edge from $U$ to $V$ labelled $>_{\Bc}$ and an \emph{undirected} edge
+        from $U$ to $V$ labelled $\sim_{\Bc}$.
+\end{enumerate}
+We define the following two binary relations on $\X_L$ using the list dependency
+graph $G_L(\EQ)$:
+\begin{enumerate}[(i)]
+    \item $U >_{\Bc}^+ V$ iff there is a path from $U$ to $V$ in $G_L(\EQ)$
+        using \emph{only} edges labelled $>_{\Bc}$.
+
+    \item $U \succ_L V$ iff there is a path from $U$ to $V$ in $G_L(\EQ)$ with
+        \emph{at least} one edge labelled $>_{\Cons}$.
+\end{enumerate}
+Since two list variables connected by $\sim_{\Bc}$ must be assigned lists with
+the same length by any unifier, $\succ_L$ can be interpreted as ``longer than''.
+
+\subsection{The $\Nonnil$ Set}
+
+The last data structure use by the algorithm is a set $\Nonnil \subseteq \X_L$
+of variables that \emph{must not} be set to $\Nil$ in any unifier of $\EQ$. The
+set is defined as follows:
+\begin{enumerate}[(i)]
+    \item If $(U \ueq \Cons(v, W)) \in \EQ$, then $U \in \Nonnil$.
+    \item If $(U \ueq \Bc(V, w)) \in \EQ$, then $U \in \Nonnil$ iff $V \in \Nonnil$.
+    \item If $(U \ueq V) \in \EQ$, then $U \in \Nonnil$ iff $V \in \Nonnil$.
+\end{enumerate}
+
+\section{Maude Implementation}
+
+Our implementation of the unification algorithm is written in the Maude
+programming language, developed at the University of Illinois at
+Urbana-Champaign. Maude, according to its website\footnote{The Maude System:
+\url{http://maude.cs.uiuc.edu/}}, is ``a high-performance reflective language
+supporting both equation and rewriting logic specification''. This excellent
+support for reflective programming makes Maude an attractive target for
+applications related to term-rewriting, because implementors can turn Maude's
+powerful unification and rewriting capabilities back on terms at the
+meta-level.
+
+Maude programs are built around \emph{modules}, which correspond to rewrite
+systems in term-rewriting. Modules contain definitions of sorts, subsort
+relationships, operators, sort membership axioms, equations, and rules.
+Equations are assumed to convergent when oriented from left to right, while
+rules have no such restrictions.
+
+As much as possible, our implementation is built around general-purpose
+libraries rather than one-off solutions. To this end, there are a few big
+modules that deserve their own description.
+
+\subsection{The \lstinline|INFERENCE| Module}
+
+Maude's notion of a rule corresponds nicely with the inference rules described
+previously. The main difference is that, while inference rules are applied
+according to a precedence in a non-deterministic manner, Maude rules are applied
+in a deterministic manner according to some strategy. The two built-in strategies
+are a top-down rule-fair strategy (\lstinline|rewrite|) and bottom-up rule-fair
+strategy (\lstinline|frewrite|). For our inference rules, nondeterminism is
+crucial --- one branch of the algorithm may lead to failure while another may
+find a unifier.
+
+To solve this problem, we turn to what Maude calls \emph{internal strategies},
+in which we use reflective programming to apply rules from a module in a manner
+that we can control. The \lstinline|INFERENCE| module provides a strategy
+\lstinline|inferenceRules| that applies rules (unconditional or conditional)
+using a backtracking approach until either all branches fail or a successful
+branch has no rule applicable to it.
+
+To be recognized by this strategy, a rule must be labelled and must be tagged
+with metadata describing its precedence and whether it is deterministic or
+nondeterministic (corresponding to ``don't-care'' and ``don't-know'',
+respectively).  For example, the inference rule given in
+Subsection~\ref{subsection:inference} is implemented in the module
+\lstinline|BC-INFERENCE| by the rule:
+\begin{lstlisting}[language=Maude]
+        rl [cancel-cons] :
+            bc-infer(U =? CONS[V, W] & U =? CONS[X, Y] & EQ,
+                     BC H CONS NIL ELT LIST, N)
+            => bc-infer(U =? CONS[V, W] & X =? V & Y =? W & EQ,
+                        BC H CONS NIL ELT LIST, N)
+            [metadata "prec 3 det"] .
+\end{lstlisting}
+The metadata \lstinline|"prec 3 det"| indicates that this rule has precedence~3
+(lower precedence rules are run more often) and that it deterministic (no
+branching is required). The relative order of \lstinline|prec 3| and
+\lstinline|det| is irrelevant.
+
+As an example of a nondeterministic rule, here is another rule from
+\lstinline|BC-INFERENCE|:
+\begin{lstlisting}[language=Maude]
+        rl [cancel-nondet] :
+            bc-infer(U =? BC[V, W] & U =? BC[X, Y] & EQ,
+                     BC H CONS NIL ELT LIST, N)
+            => bc-infer(U =? BC[V, W] & X =? V & Y =? W & EQ,
+                        BC H CONS NIL ELT LIST, N)
+            [metadata "prec 8 nondet"] .
+\end{lstlisting}
+This rule guesses that two $\Bc$-equations can be decomposed, but may fail. Its
+metadata contains \lstinline|nondet| to indicate that backtracking is required.
+
+The \lstinline|inferenceRules| operation has the following signature:
+\begin{lstlisting}[language=Maude]
+        op inferenceRules : Module Term Term Nat -> [Term] .
+\end{lstlisting}
+It takes as its arguments a meta-representation of the module module in which
+to rewrite, a term representing the object to be rewritten, a term representing
+failure, and natural number indicating the number of solutions to skip. This
+last argument is required because \lstinline|inferenceRules| is what Maude
+calls a \emph{descent function}. Rather than return all solutions at once, the caller
+specifies which solution is desired. Note that \lstinline|inferenceRules| is a
+partial function (its range is a kind); the operation is undefined if, for
+example, the module argument does not represent a valid module.
+
+\subsection{The \lstinline|GRAPH| and \lstinline|META-GRAPH| Modules}
+
+\subsection{The \lstinline|BC-UNIFICATION| Module}
+
+\end{document}
+
