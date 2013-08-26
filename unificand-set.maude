@@ -116,12 +116,12 @@ fmod STANDARD-FORM is
         fi
         if not (T1 :: Variable)
         /\ SORT1 := leastSort(MOD, T1) /\ SORT2 := leastSort(MOD, T2)
-        /\ U := newVar*(N, SORT1) .
+        /\ U := newVar*(N + 1, SORT1) .
     ceq decompose(MOD, U =? F[TL1, T, TL2] & EQ, N) =
         decompose(MOD, U =? F[TL1, V, TL2] & V =? T & EQ, N + 1)
         if not (T :: Variable)
         /\ SORT := leastSort(MOD, T)
-        /\ V := newVar*(N, SORT) .
+        /\ V := newVar*(N + 1, SORT) .
     eq decompose(MOD, EQ, N) = {EQ, N} [owise] .
 
     *** Convert a unificand set in standard dag-solved form to a substitution.

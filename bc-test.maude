@@ -1,7 +1,7 @@
 load bc-unification
 
 fmod TEST-BC-UNIFICATION is
-    protecting BC-UNIFICATION{StandardUnification} .
+    protecting BC-UNIFICATION{MetaUnification} .
     protecting NAT .
 
     vars N : Nat .

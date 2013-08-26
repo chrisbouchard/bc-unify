@@ -2,6 +2,7 @@ load apply .
 load graph .
 load inference .
 load unificand-set .
+load unification-algorithm .
 
 fth BC is
     --- Sorts for element and list are assumed to be completely disjoint.
@@ -20,30 +21,7 @@ fth BC is
     eq bc(cons(X, Y), Z) = cons(h(X, Z), bc(Y, h(X, Z))) [nonexec] .
 endfth
 
-fmod SIMPLE-BC is
-    --- Sorts for element and list are assumed to be completely disjoint.
-    sorts Elt List .
-
-    op cons : Elt List -> List .
-    op nil : -> List .
-    op bc : List Elt -> List .
-    op h : Elt Elt -> Elt .
-
-    vars X Z : Elt .
-    vars Y : List .
-endfm
-
 view BC from BC to SIMPLE-BC is
-endv
-
-fth UNIFICATION-ALGORITHM is
-    protecting META-LEVEL .
-
-    op unify-alg : Module UnificationProblem Nat Nat -> [UnificationPair?] .
-endfth
-
-view StandardUnification from UNIFICATION-ALGORITHM to META-LEVEL is
-    op unify-alg to metaUnify .
 endv
 
 fmod BC-SIGNATURE is
@@ -316,9 +294,9 @@ mod BC-INFERENCE is
                     BC H CONS NIL ELT LIST, N + 5)
         if U in nonnil(U =? BC[V, W] & U =? BC[X, Y] & EQ,
                        BC H CONS NIL ELT LIST)
-        /\ U' := newVar*(N,     ELT) /\ U'' := newVar*(N + 1, LIST)
-        /\ V' := newVar*(N + 2, ELT) /\ Z   := newVar*(N + 3, LIST)
-        /\ X' := newVar*(N + 4, ELT)
+        /\ U' := newVar*(N + 1, ELT) /\ U'' := newVar*(N + 2, LIST)
+        /\ V' := newVar*(N + 3, ELT) /\ Z   := newVar*(N + 4, LIST)
+        /\ X' := newVar*(N + 5, ELT)
         [metadata "prec 6 det"] .
 
     crl [splitting] :
@@ -327,7 +305,7 @@ mod BC-INFERENCE is
         => bc-infer(U =? CONS[V, W] & X =? CONS[X', X''] & V =? H[X', Y] &
                     W =? BC[X'', V] & EQ,
                     BC H CONS NIL ELT LIST, N + 2)
-        if X' := newVar*(N, ELT) /\ X'' := newVar*(N + 1, LIST)
+        if X' := newVar*(N + 1, ELT) /\ X'' := newVar*(N + 2, LIST)
         [metadata "prec 7 det"] .
 
     rl [nil-soln-nondet] :
@@ -343,9 +321,9 @@ mod BC-INFERENCE is
         => bc-infer(U =? CONS[U', U''] & V =? CONS[V', Z] & X =? CONS[X', Z] &
                     U'' =? BC[Z, U'] & U' =? H[V', W] & U' =? H[X', Y] & EQ,
                     BC H CONS NIL ELT LIST, N + 5)
-        if U' := newVar*(N,     ELT) /\ U'' := newVar*(N + 1, LIST)
-        /\ V' := newVar*(N + 2, ELT) /\ Z   := newVar*(N + 3, LIST)
-        /\ X' := newVar*(N + 4, ELT)
+        if U' := newVar*(N + 1, ELT) /\ U'' := newVar*(N + 2, LIST)
+        /\ V' := newVar*(N + 3, ELT) /\ Z   := newVar*(N + 4, LIST)
+        /\ X' := newVar*(N + 5, ELT)
         [metadata "prec 8 nondet"] .
 
     rl [cancel-nondet] :

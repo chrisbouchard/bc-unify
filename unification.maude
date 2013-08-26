@@ -8,14 +8,16 @@
 ***
 ********************************************************************************
 
-load tools
-load unificand-set
+load tools .
+load unificand-set .
+load unification-algorithm .
 
-mod UNIFICATION is
+fmod UNIFICATION is
     protecting META-LEVEL .
     protecting NAT .
     protecting TOOLS .
     protecting UNIFICAND-SET .
+    protecting STANDARD-FORM .
 
     vars A B : Constant .
     vars E : UnificandPair .
@@ -47,11 +49,22 @@ mod UNIFICATION is
     op break : TermList TermList -> UnificandSet .
     eq break((T, L), (U, M)) = T =? U & break(L, M) .
     eq break(empty, empty) = empty .
+endfm
 
-    *** Create a substitution from a set of equations with variables on their
-    *** left hand sides
-    op buildsub : UnificandSet -> Substitution .
-    eq buildsub(X =? T & S) = X <- T ; buildsub(S) .
-    eq buildsub(empty) = none .
-endm
+*** A module to make st-unify look like metaUnify. It just ignores some of the
+*** paremeters.
+fmod UNIFICATION-ADAPTER is
+    protecting UNIFICATION .
+
+    vars MOD : Module .
+    vars PROB : UnificationProblem .
+    vars N1 N2 : Nat .
+
+    op st-unify : Module UnificationProblem Nat Nat -> UnificationPair? .
+    eq st-unify(MOD, PROB, N1, N2) = st-unify(PROB, N1) .
+endfm
+
+view StandardUnification from UNIFICATION-ALGORITHM to UNIFICATION-ADAPTER is
+    op unify-alg to st-unify .
+endv
 
