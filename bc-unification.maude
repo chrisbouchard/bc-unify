@@ -1,6 +1,7 @@
-load graph
-load inference
-load unificand-set
+load apply .
+load graph .
+load inference .
+load unificand-set .
 
 fth BC is
     --- Sorts for element and list are assumed to be completely disjoint.
@@ -16,39 +17,128 @@ fth BC is
 
     --- The axioms of BC. They form a canonical rewrite system.
     eq bc(nil, Z) = nil [nonexec] .
-    eq bc(cons(X, Y), Z) = cons(h(X, Z), bc(Y, h(X, Z)) [nonexec] .
+    eq bc(cons(X, Y), Z) = cons(h(X, Z), bc(Y, h(X, Z))) [nonexec] .
 endfth
 
-fmod BC-SIGNATURE is
+fmod SIMPLE-BC is
+    --- Sorts for element and list are assumed to be completely disjoint.
+    sorts Elt List .
+
+    op cons : Elt List -> List .
+    op nil : -> List .
+    op bc : List Elt -> List .
+    op h : Elt Elt -> Elt .
+
+    vars X Z : Elt .
+    vars Y : List .
+endfm
+
+view BC from BC to SIMPLE-BC is
+endv
+
+fth UNIFICATION-ALGORITHM is
     protecting META-LEVEL .
+
+    op unify-alg : Module UnificationProblem Nat Nat -> [UnificationPair?] .
+endfth
+
+view StandardUnification from UNIFICATION-ALGORITHM to META-LEVEL is
+    op unify-alg to metaUnify .
+endv
+
+fmod BC-SIGNATURE is
+    protecting META-TERM .
     protecting UNIFICAND-SET .
+    protecting STANDARD-FORM .
 
     sorts BCSignature .
 
     *** The signature is just given as a sequence of Qids. Maybe this should
     *** become something better, but pattern-matching works for now.
+    ***
+    --- BC H CONS NIL ELT LIST
+    ---
     op ______ : Qid Qid Qid Constant Type Type -> BCSignature [ctor] .
 
-    op bc-infer : UnificandSet BCSignature Nat -> UnificationPair? .
+    *** We'll declare this here because we'll need it in both BC-UNIFICATION
+    *** and BC-INFERENCE.
+    op bc-infer : StUnificandSet BCSignature Nat -> [UnificationPair?] .
 endfm
 
-fmod BC-UNIFICATION is
+fmod BC-UNIFICATION{ALG :: UNIFICATION-ALGORITHM} is
+    protecting APPLY .
     protecting BC-SIGNATURE .
     protecting INFERENCE .
     protecting UNIFICAND-SET .
+    protecting STANDARD-FORM .
+    protecting UNIFICATION-PAIR-UTILS .
 
-    vars N SKIP : Nat .
+    sorts UnificandSetPartition .
+
+    op _;_ : UnificandSet UnificandSet -> UnificandSetPartition [ctor] .
+
+    vars MOD : Module .
+    vars N N' SKIP : Nat .
     vars SIG : BCSignature .
     vars PROB : UnificationProblem .
-    vars EQ : UnificandSet .
+    vars EQ S1 S2 : UnificandSet .
+    vars PAIR : UnificationPair? .
+    vars SUB : Substitution .
+
+    vars BC H CONS : Qid .
+    vars NIL : Constant .
+    vars ELT LIST : Type .
+
+    vars U : Variable .
+    vars T : Term .
 
     *** This is the entry-point for BC unification.
-    op bc-unify : UnificationProblem BCSignature Nat Nat -> UnificationPair? .
-    eq bc-unify(PROB, SIG, N, SKIP) =
-        downTerm(inferenceRules(upModule('BC-INFERENCE, false),
-                                upTerm(bc-infer(problemToSet(PROB), SIG, N)),
-                                upTerm((noUnifier).UnificationPair?), SKIP),
-                 (noUnifier).UnificationPair?) .
+    op bc-unify : UnificationProblem Module BCSignature Nat Nat
+                  -> UnificationPair? .
+    ceq bc-unify(PROB, MOD, SIG, N, SKIP) =
+        next-phase(downTerm(inferenceRules(upModule('BC-INFERENCE, false),
+                                           upTerm(bc-infer(EQ, SIG, N')),
+                                           upTerm((noUnifier).UnificationPair?),
+                                           SKIP),
+                            (noUnifier).UnificationPair?),
+                   MOD)
+        if {EQ, N'} := decompose(MOD, problemToSet(PROB), N) .
+
+    op next-phase : [UnificationPair?] Module -> UnificationPair? .
+    eq next-phase(PAIR, MOD) = PAIR .
+    ceq next-phase(bc-infer(EQ, SIG, N), MOD) = {buildsub(S1), N}
+        if S1 ; S2 := getPartition(EQ, SIG)
+        /\ S2 = empty .
+    ceq next-phase(bc-infer(EQ, SIG, N), MOD) =
+        if PAIR :: UnificationPair
+            then {filterSubst((getSubstitution(PAIR))[buildsub(S1)] ;
+                              getSubstitution(PAIR)),
+                  getNat(PAIR)}
+            else noUnifier
+        fi
+        if S1 ; S2 := getPartition(EQ, SIG)
+        /\ PAIR := unify-alg(MOD, setToProblem(S2), N, 0) .
+
+    op getPartition : UnificandSet BCSignature -> UnificandSetPartition .
+    eq getPartition(EQ, SIG) = $getPartition(EQ, empty ; empty, SIG) .
+
+    op $getPartition : UnificandSet UnificandSetPartition BCSignature
+                      -> UnificandSetPartition .
+    ceq $getPartition(U =? T & EQ, S1 ; S2, BC H CONS NIL ELT LIST) =
+        $getPartition(EQ, (S1 & U =? T) ; S2, BC H CONS NIL ELT LIST)
+        if getType(U) = LIST .
+    ceq $getPartition(U =? T & EQ, S1 ; S2, BC H CONS NIL ELT LIST) =
+        $getPartition(EQ, S1 ; (S2 & U =? T), BC H CONS NIL ELT LIST)
+        if getType(U) = ELT .
+    eq $getPartition(U =? T & EQ, S1 ; S2, BC H CONS NIL ELT LIST) =
+        $getPartition(EQ, S1 ; S2, BC H CONS NIL ELT LIST)
+        [owise] .
+    eq $getPartition(empty, S1 ; S2, BC H CONS NIL ELT LIST) = S1 ; S2 .
+
+    op filterSubst : Substitution -> Substitution .
+    eq filterSubst(U <- T ; SUB) =
+        (if isNewVar(U) then none else U <- T fi) ; filterSubst(SUB) .
+    eq filterSubst(none) = none .
 endfm
 
 view Variable from TRIV to META-TERM is
@@ -118,24 +208,24 @@ fmod BC-GRAPH is
     vars S : BCSimpleSet .
     vars U V : Variable .
 
-    op isBcPath : BCPath -> Bool .
-    ceq isBcPath(E P) = $isBcPath(U, E P)
-        if s(U, V) := nodes(E) /\ U >bc V in E .
-    eq isBcPath(P) = false [owise] .
-
-    op $isBcPath : Variable BCPath -> Bool .
-    ceq $isBcPath(U, E NeP) = U >bc V in E and-then $isBcPath(V, NeP)
+    *** Check that a path is a cycle of (directed) >bc edges, starting from
+    *** the specified node.
+    op isBcPath : Variable BCPath -> Bool .
+    ceq isBcPath(U, E NeP) = U >bc V in E and-then isBcPath(V, NeP)
         if s(U, V) := nodes(E) .
-    ceq $isBcPath(U, E) = U >bc V in E
+    ceq isBcPath(U, E) = U >bc V in E
         if s(U, V) := nodes(E) .
-    eq $isBcPath(U, emptypath) = false .
+    eq isBcPath(U, emptypath) = false .
 
+    *** Check that a path contains at least one >cons edge.
     op isLPath : BCPath -> Bool .
     eq isLPath(E P) = isCons(E) or-else (isBc(E) and-then isLPath(P)) .
     eq isLPath(emptypath) = false .
 
-    op hasBcCycle : BCGraph -> Bool .
-    eq hasBcCycle(G) = hasCycle(G, ['BC-GRAPH], 'isBcPath[[]]) .
+    op hasBcCycle : Variable BCGraph -> Bool .
+    eq hasBcCycle(U, G) = findNePath(U, U, G, ['BC-GRAPH],
+                                     'isBcPath[upTerm(U), []], 0)
+                          :: BCPath .
 
     op hasLCycle : BCGraph -> Bool .
     eq hasLCycle(G) = hasCycle(G, ['BC-GRAPH], 'isLPath[[]]) .
@@ -162,6 +252,17 @@ mod BC-INFERENCE is
     *** sets.
     op bc-infer : StUnificandSet BCSignature Nat -> UnificationPair? .
 
+    rl [size-failure] :
+        bc-infer(U =? CONS[V, W] & U =? NIL & EQ, BC H CONS NIL ELT LIST, N)
+        => noUnifier
+        [metadata "prec 0 det"] .
+
+    crl [cycle-failure] :
+        bc-infer(EQ, BC H CONS NIL ELT LIST, N)
+        => noUnifier
+        if hasLCycle(buildGraph(EQ, BC H CONS NIL ELT LIST))
+        [metadata "prec 0 det"] .
+
     rl [rep-elim] :
         bc-infer(U =? T & U =? T & EQ, BC H CONS NIL ELT LIST, N)
         => bc-infer(U =? T & EQ, BC H CONS NIL ELT LIST, N)
@@ -175,7 +276,7 @@ mod BC-INFERENCE is
     crl [var-elim] :
         bc-infer(U =? V & EQ, BC H CONS NIL ELT LIST, N)
         => bc-infer(U =? V & replace(U, V, EQ), BC H CONS NIL ELT LIST, N)
-        if occurs(U, EQ)
+        if U =/= V /\ occurs(U, EQ)
         [metadata "prec 2 det"] .
 
     rl [cancel-cons] :
@@ -198,7 +299,8 @@ mod BC-INFERENCE is
     crl [nil-soln-3] :
         bc-infer(U =? BC[V, W] & EQ, BC H CONS NIL ELT LIST, N)
         => bc-infer(U =? NIL & V =? NIL & EQ, BC H CONS NIL ELT LIST, N)
-        if hasBcCycle(buildGraph(EQ, BC H CONS NIL ELT LIST))
+        if hasBcCycle(U, buildGraph(U =? BC[V, W] & EQ,
+                                    BC H CONS NIL ELT LIST))
         [metadata "prec 4 det"] .
 
     rl [semi-cancel-bc] :
@@ -228,28 +330,45 @@ mod BC-INFERENCE is
         if X' := newVar*(N, ELT) /\ X'' := newVar*(N + 1, LIST)
         [metadata "prec 7 det"] .
 
-    rl [size-failure] :
-        bc-infer(U =? CONS[V, W] & U =? NIL & EQ, BC H CONS NIL ELT LIST, N)
-        => noUnifier
-        [metadata "prec 0 det"] .
+    rl [nil-soln-nondet] :
+        bc-infer(U =? BC[V, W] & U =? BC[X, Y] & EQ,
+                 BC H CONS NIL ELT LIST, N)
+        => bc-infer(U =? NIL & V =? NIL & X =? NIL & EQ,
+                    BC H CONS NIL ELT LIST, N)
+        [metadata "prec 8 nondet"] .
 
-    crl [cycle-failure] :
-        bc-infer(EQ, BC H CONS NIL ELT LIST, N)
-        => noUnifier
-        if hasLCycle(buildGraph(EQ, BC H CONS NIL ELT LIST))
-        [metadata "prec 0 det"] .
+    crl [push-below-nondet] :
+        bc-infer(U =? BC[V, W] & U =? BC[X, Y] & EQ,
+                 BC H CONS NIL ELT LIST, N)
+        => bc-infer(U =? CONS[U', U''] & V =? CONS[V', Z] & X =? CONS[X', Z] &
+                    U'' =? BC[Z, U'] & U' =? H[V', W] & U' =? H[X', Y] & EQ,
+                    BC H CONS NIL ELT LIST, N + 5)
+        if U' := newVar*(N,     ELT) /\ U'' := newVar*(N + 1, LIST)
+        /\ V' := newVar*(N + 2, ELT) /\ Z   := newVar*(N + 3, LIST)
+        /\ X' := newVar*(N + 4, ELT)
+        [metadata "prec 8 nondet"] .
+
+    rl [cancel-nondet] :
+        bc-infer(U =? BC[V, W] & U =? BC[X, Y] & EQ,
+                 BC H CONS NIL ELT LIST, N)
+        => bc-infer(U =? BC[V, W] & X =? V & Y =? W & EQ,
+                    BC H CONS NIL ELT LIST, N)
+        [metadata "prec 8 nondet"] .
 
 
     *** Convert a set of unificands into a dependency graph.
     op buildGraph : UnificandSet BCSignature -> BCGraph .
     eq buildGraph(U =? CONS[V, W] & EQ, BC H CONS NIL ELT LIST) =
-        bcE(U, W) || buildGraph(EQ, BC H CONS NIL ELT LIST) .
+        consE(U, W) || buildGraph(EQ, BC H CONS NIL ELT LIST) .
     eq buildGraph(U =? BC[V, W] & EQ, BC H CONS NIL ELT LIST) =
         bcE(U, V) || buildGraph(EQ, BC H CONS NIL ELT LIST) .
     eq buildGraph(U =? T & EQ, BC H CONS NIL ELT LIST) =
         buildGraph(EQ, BC H CONS NIL ELT LIST) [owise] .
+    eq buildGraph(empty, SIG) = emptygraph .
 
 
+    *** Compute the set of variables that must NOT be assigned nil in a
+    *** solution.
     op nonnil : UnificandSet BCSignature -> QidSet .
     eq nonnil(EQ, SIG) = $nonnil(EQ, none, SIG) .
 
@@ -257,8 +376,8 @@ mod BC-INFERENCE is
     eq $nonnil(U =? CONS[V, W] & EQ, S, BC H CONS NIL ELT LIST) =
         $nonnil(EQ, (U ; S), BC H CONS NIL ELT LIST) .
     ceq $nonnil(U =? BC[V, W] & EQ, S, BC H CONS NIL ELT LIST) =
-        $nonnil(EQ, (U ; V ; W ; S), BC H CONS NIL ELT LIST)
-        if (U in S) or (V in S) or (W in S) .
+        $nonnil(EQ, (U ; V ; S), BC H CONS NIL ELT LIST)
+        if (U in S) or (V in S) .
     ceq $nonnil(U =? V & EQ, S, BC H CONS NIL ELT LIST) =
         $nonnil(EQ, (U ; V ; S), BC H CONS NIL ELT LIST)
         if (U in S) or (V in S) .

@@ -17,14 +17,14 @@ fmod TOOLS is
 
     *** Create a new variable of the given type
     op newVar* : Nat Type -> Variable .
-    eq newVar*(N, Y) = qid("V#" + string(N, 10) + ":" + string(Y)) .
+    eq newVar*(N, Y) = qid("#" + string(N, 10) + ":" + string(Y)) .
 
     op isNewVar : Qid -> Bool .
     ceq isNewVar(Q) = true
         if Q :: Variable /\ STR := string(getName(Q))
-        /\ PREFIX := substr(STR, 0, 2)
-        /\ SUFFIX := substr(STR, 2, length(STR))
-        /\ PREFIX == "V#" /\ rat(SUFFIX, 10) :: Nat .
+        /\ PREFIX := substr(STR, 0, 1)
+        /\ SUFFIX := substr(STR, 1, length(STR))
+        /\ PREFIX == "#" /\ rat(SUFFIX, 10) :: Nat .
     eq isNewVar(Q) = false [owise] .
 
     *** Check whether the variable appears in the term
@@ -85,5 +85,18 @@ fmod STRING-UTILS is
         /\ SUFFIX := substr(STR, find(STR, SEP, 0) + length(SEP), length(STR)) .
     ceq splitString(STR, SEP) = if length(STR) > 0 then STR else nil fi
         if notFound == find(STR, SEP, 0) .
+endfm
+
+fmod UNIFICATION-PAIR-UTILS is
+    protecting META-LEVEL .
+
+    vars SUB : Substitution .
+    vars N : Nat .
+
+    op getSubstitution : UnificationPair -> Substitution .
+    eq getSubstitution({SUB, N}) = SUB .
+
+    op getNat : UnificationPair -> Nat .
+    eq getNat({SUB, N}) = N .
 endfm
 

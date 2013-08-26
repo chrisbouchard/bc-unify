@@ -259,14 +259,17 @@ fmod INFERENCE is
             then getTerm(metaReduce(MOD, getTerm(RESULT)))
             else applyList(MOD, QL, T, 0, 0)
         fi
-        if RESULT := metaXapply(MOD, T, Q, none, 0, unbounded, N) .
+        if RESULT := metaXapply(MOD, T, Q, none, 0, unbounded, N)
+        /\ FAILING := not (RESULT :: Result4Tuple)
+        [print "Applied=" Q " N=" N " Failing=" FAILING] .
     ceq applyList(MOD, Q QL, T, N, s SKIP) =
         if RESULT :: Result4Tuple
             then applyList(MOD, Q QL, T, s N, SKIP)
             else applyList(MOD, QL, T, 0, s SKIP)
         fi
         if RESULT := metaXapply(MOD, T, Q, none, 0, unbounded, N) .
-    eq applyList(MOD, nil, T, N, SKIP) = failure .
+    eq applyList(MOD, nil, T, N, SKIP) = failure
+        [print "Failure to apply!"] .
 endfm
 
 mod TEST-RULES is

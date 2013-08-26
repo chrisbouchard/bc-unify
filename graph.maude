@@ -89,7 +89,7 @@ fmod GRAPH{E :: EDGE} is
 
     op hasCycle : Graph{E} -> Bool .
     ceq hasCycle(G) = true
-        if s(N, S) := graphnodes(G) /\ noPath =/= findNePath(N, N, G, 0) .
+        if s(N, S) := graphnodes(G) /\ findNePath(N, N, G, 0) :: NePath{E} .
     eq hasCycle(G) = false [owise] .
 
 
@@ -186,7 +186,7 @@ fmod META-GRAPH{E :: EDGE} is
     op hasCycle : Graph{E} Module Context -> Bool .
     ceq hasCycle(G, MOD, CTX) = true
         if s(N, S) := graphnodes(G)
-        /\ noPath =/= findNePath(N, N, G, MOD, CTX, 0) .
+        /\ findNePath(N, N, G, MOD, CTX, 0) :: NePath{E} .
     eq hasCycle(G, MOD, CTX) = false [owise] .
 
 

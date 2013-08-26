@@ -1,6 +1,8 @@
+load apply
 load tools
 
 fmod UNIFICAND-SET is
+    protecting APPLY .
     protecting EXT-BOOL .
     protecting META-LEVEL .
     protecting TOOLS .
@@ -13,55 +15,31 @@ fmod UNIFICAND-SET is
     subsorts EmptyUnificandSet < UnificandSet .
     subsorts UnificandPair < NeUnificandSet < UnificandSet .
 
-    sorts StUnificandPair .
-    subsorts StUnificandPair < UnificandPair .
-
-    sorts StUnificandSet NeStUnificandSet .
-    subsorts EmptyUnificandSet < StUnificandSet .
-    subsorts NeStUnificandSet < NeUnificandSet .
-    subsorts StUnificandPair < NeStUnificandSet < StUnificandSet < UnificandSet .
-
-    *** Constructors
-    op _=?_ : [Term] [Term] -> [StUnificandPair] [ctor ditto] .
-
     op empty : -> EmptyUnificandSet [ctor] .
     op _&_ : UnificandSet UnificandSet -> UnificandSet
         [ctor assoc comm id: empty prec 80] .
     op _&_ : NeUnificandSet UnificandSet -> NeUnificandSet
-        [ctor ditto] .
-    op _&_ : StUnificandSet StUnificandSet -> StUnificandSet
-        [ctor ditto] .
-    op _&_ : NeStUnificandSet StUnificandSet -> NeStUnificandSet
         [ctor ditto] .
 
     vars T T1 T2 : Term .
     vars TL : TermList .
     vars PROB : UnificationProblem .
     vars EQ : UnificandSet .
+    vars NeEQ : NeUnificandSet .
     vars NEQ : NeUnificandSet .
+    vars SUB : Substitution .
     vars U V : Variable .
     vars C : Constant .
     vars F : Qid .
-
-    *** Specify which equations are in standard form.
-    mb U =? V : StUnificandPair .
-    cmb U =? F[TL] : StUnificandPair if isVarList(TL) .
-
-    *** Check if a term list contains only variables.
-    op isVarList : TermList -> Bool .
-    eq isVarList((V, TL)) = isVarList(TL) .
-    eq isVarList((C, TL)) = false .
-    eq isVarList(empty) = true .
 
     *** Convert a unification problem to a (nicer to work with) unificand set.
     op problemToSet : UnificationProblem -> UnificandSet .
     eq problemToSet(T1 =? T2 /\ PROB) = T1 =? T2 & problemToSet(PROB) .
     eq problemToSet(T1 =? T2) = T1 =? T2 .
 
-    *** Convert a unificand set in standard dag-solved form to a substitution.
-    op setToSubst : UnificandSet -> Substitution .
-    eq setToSubst(U =? T & EQ) = U <- T ; setToSubst(EQ) .
-    eq setToSubst((empty).UnificandSet) = none .
+    op setToProblem : UnificandSet -> [UnificationProblem] .
+    eq setToProblem(T1 =? T2 & NeEQ) = T1 =? T2 /\ setToProblem(NeEQ) .
+    eq setToProblem(T1 =? T2) = T1 =? T2 .
 
     *** Check if a variable occurs in a set of unificands.
     op occurs : Variable UnificandSet -> Bool .
@@ -77,5 +55,79 @@ fmod UNIFICAND-SET is
 
     op replace : Variable Term EmptyUnificandSet -> EmptyUnificandSet .
     eq replace(U, T, (empty).UnificandSet) = (empty).UnificandSet .
+endfm
+
+fmod STANDARD-FORM is
+    protecting UNIFICAND-SET .
+    protecting NAT .
+
+    sorts StUnificandPair .
+    subsorts StUnificandPair < UnificandPair .
+
+    op _=?_ : [Term] [Term] -> [StUnificandPair] [ctor ditto] .
+
+    sorts StUnificandSet NeStUnificandSet .
+    subsorts EmptyUnificandSet < StUnificandSet .
+    subsorts NeStUnificandSet < NeUnificandSet .
+    subsorts StUnificandPair < NeStUnificandSet < StUnificandSet < UnificandSet .
+
+    op _&_ : StUnificandSet StUnificandSet -> StUnificandSet
+        [ctor ditto] .
+    op _&_ : NeStUnificandSet StUnificandSet -> NeStUnificandSet
+        [ctor ditto] .
+
+    sorts DecomposeResult DecomposeResult? .
+    subsorts DecomposeResult < DecomposeResult? .
+
+    op {_,_} : StUnificandSet Nat -> DecomposeResult [ctor] .
+    op noDecomposition : -> DecomposeResult? [ctor] .
+
+    vars MOD : Module .
+    vars EQ : UnificandSet .
+    vars T T1 T2 : Term .
+    vars TL TL1 TL2 : TermList .
+    vars F : Qid .
+    vars U V : Variable .
+    vars C : Constant .
+    vars N : Nat .
+    vars SORT SORT1 SORT2 : Sort .
+    vars SUB : Substitution .
+
+    *** Specify which equations are in standard form.
+    mb U =? V : StUnificandPair .
+    mb U =? C : StUnificandPair .
+    cmb U =? F[TL] : StUnificandPair if isVarList(TL) .
+
+    *** Check if a term list contains only variables.
+    op isVarList : TermList -> Bool .
+    eq isVarList((V, TL)) = isVarList(TL) .
+    eq isVarList((C, TL)) = false .
+    eq isVarList(empty) = true .
+
+    *** Decompose a problem into a corresponding problem in standard form.
+    *** We could do this more intelligently by reusing variables that have the
+    *** correct form already, but we don't for now.
+    op decompose : Module UnificandSet Nat -> DecomposeResult? .
+    ceq decompose(MOD, T1 =? T2 & EQ, N) =
+        --- This is probably too strong a condition, but it works for now.
+        if SORT1 == SORT2
+            then decompose(MOD, U =? T1 & U =? T2 & EQ, N + 1)
+            else noDecomposition
+        fi
+        if not (T1 :: Variable)
+        /\ SORT1 := leastSort(MOD, T1) /\ SORT2 := leastSort(MOD, T2)
+        /\ U := newVar*(N, SORT1) .
+    ceq decompose(MOD, U =? F[TL1, T, TL2] & EQ, N) =
+        decompose(MOD, U =? F[TL1, V, TL2] & V =? T & EQ, N + 1)
+        if not (T :: Variable)
+        /\ SORT := leastSort(MOD, T)
+        /\ V := newVar*(N, SORT) .
+    eq decompose(MOD, EQ, N) = {EQ, N} [owise] .
+
+    *** Convert a unificand set in standard dag-solved form to a substitution.
+    op buildsub : StUnificandSet -> Substitution .
+    ceq buildsub(U =? T & EQ) = SUB[U <- T] ; SUB
+        if not occurs(U, EQ) /\ SUB := buildsub(EQ) .
+    eq buildsub(empty) = none .
 endfm
 

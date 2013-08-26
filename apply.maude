@@ -46,7 +46,7 @@ fmod APPLY is
     vars NeGTL : NeGTermList .
     vars T : Term .
     vars F : Qid .
-    vars SUB : Substitution .
+    vars SUB SUB' : Substitution .
     vars A : Constant .
     vars V : Variable .
     vars N : Nat .
@@ -84,6 +84,7 @@ fmod APPLY is
     op _[_] : Substitution Cap -> Cap .
     op _[_] : Substitution Term -> Term .
     op _[_] : Substitution Context -> Context .
+    op _[_] : Substitution Substitution -> Substitution .
 
     eq SUB[A] = A .
     eq SUB[[]] = [] .
@@ -92,6 +93,9 @@ fmod APPLY is
     eq SUB[V] = V [owise] .
 
     eq SUB[F[GTL]] = F[applySubst(SUB, GTL)] .
+
+    eq SUB[V <- T ; SUB'] = V <- SUB[T] ; SUB[SUB'] .
+    eq SUB[none] = none .
 
     op applySubst : Substitution GTermList -> GTermList .
     eq applySubst(SUB, (T, GTL)) = SUB[T], applySubst(SUB, GTL) .
