@@ -1,11 +1,37 @@
-*******************************************************************************
+**********************************************************************
 *** inference.maude
-*** Chris Bouchard
-*** 2013-08-15
 ***
-*******************************************************************************
+*** Copyright (c) 2013, Christopher Bouchard
+*** All rights reserved.
+***
+*** Redistribution and use in source and binary forms, with or without
+*** modification, are permitted provided that the following conditions
+*** are met:
+***
+***  * Redistributions of source code must retain the above copyright
+***    notice, this list of conditions and the following disclaimer.
+***
+***  * Redistributions in binary form must reproduce the above copyright
+***    notice, this list of conditions and the following disclaimer in
+***    the documentation and/or other materials provided with the
+***    distribution.
+***
+*** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+*** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+*** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+*** FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+*** COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+*** INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+*** BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+*** LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+*** CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+*** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+*** ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+*** POSSIBILITY OF SUCH DAMAGE.
+***
+**********************************************************************
 
-load tools
+load tools .
 
 fmod RULE-TRIPLE is
     protecting CONVERSION .
@@ -45,13 +71,16 @@ fmod RULE-TRIPLE is
     eq getType({Q, N, RT}) = RT .
 
     op ruleToTriple : Rule -> RuleTriple? .
-    ceq ruleToTriple(rl LHS => RHS [metadata(STR) label(Q) ATTRS] .) = {Q, N, RT}
+    ceq ruleToTriple(rl LHS => RHS [metadata(STR) label(Q) ATTRS] .) =
+        {Q, N, RT}
         if L := splitString(STR, " ")
         /\ PREFIX "prec" STR' SUFFIX := L
         /\ PREFIX' STR'' SUFFIX' := L
         /\ N := rat(STR', 10)
         /\ RT := stringToRuleType(STR'') .
-    ceq ruleToTriple(crl LHS => RHS if COND [metadata(STR) label(Q) ATTRS] .) = {Q, N, RT}
+    ceq ruleToTriple(crl LHS => RHS if COND
+                     [metadata(STR) label(Q) ATTRS] .) =
+        {Q, N, RT}
         if L := splitString(STR, " ")
         /\ PREFIX "prec" STR' SUFFIX := L
         /\ PREFIX' STR'' SUFFIX' := L
@@ -59,7 +88,7 @@ fmod RULE-TRIPLE is
         /\ RT := stringToRuleType(STR'') .
     eq ruleToTriple(R) = noTriple [owise] .
 
-    op stringToRuleType : String ~> RuleType .
+    op stringToRuleType : String -> [RuleType] .
     eq stringToRuleType("det") = det .
     eq stringToRuleType("nondet") = nondet .
 endfm
@@ -133,11 +162,13 @@ fmod INFERENCE is
     protecting TERM-ORDER .
     protecting TOOLS .
 
-    protecting LIST{RuleTriple} * (sort NeList{RuleTriple} to NeRuleTripleList,
-                                   sort List{RuleTriple} to RuleTripleList) .
+    protecting LIST{RuleTriple}
+        * (sort NeList{RuleTriple} to NeRuleTripleList,
+           sort List{RuleTriple} to RuleTripleList) .
 
-    protecting LIST{PathElement} * (sort NeList{PathElement} to NePath,
-                                    sort List{PathElement} to Path) .
+    protecting LIST{PathElement}
+        * (sort NeList{PathElement} to NePath,
+           sort List{PathElement} to Path) .
 
     sort Term? .
     subsort Term < Term? .
@@ -168,12 +199,12 @@ fmod INFERENCE is
         if DLIST := rulesToList(getRls(MOD), det)
         /\ NDLIST := rulesToList(getRls(MOD), nondet) .
 
-    --- This operator should be memoized, but we'll have to change the way it
-    --- works so we can take advantage of subproblems.
-    op $inferenceRules : Module RuleTripleList RuleTripleList Term Term Path
-                         Nat Nat Nat Bool -> Term? .
-    eq $inferenceRules(MOD, DLIST, NDLIST, FAIL, FAIL, PATH, PREC, MAX,
-                       BIGSKIP, FAILING) =
+    --- This operator should be memoized, but we'll have to change the
+    --- way it works so we can take advantage of subproblems.
+    op $inferenceRules : Module RuleTripleList RuleTripleList Term
+                         Term Path Nat Nat Nat Bool -> Term? .
+    eq $inferenceRules(MOD, DLIST, NDLIST, FAIL, FAIL, PATH, PREC,
+                       MAX, BIGSKIP, FAILING) =
         $handleFailure(MOD, DLIST, NDLIST, FAIL, PATH, MAX, BIGSKIP)
         [print "PREC = " PREC ", T = " FAIL] .
     ceq $inferenceRules(MOD, DLIST, NDLIST, T, FAIL, PATH, PREC, MAX,
@@ -182,60 +213,67 @@ fmod INFERENCE is
                        if FAILING then s BIGSKIP else BIGSKIP fi)
         if PREC > MAX
         [print "PREC = " PREC ", T = " T] .
-    ceq $inferenceRules(MOD, DLIST, NDLIST, T, FAIL, PATH, PREC, MAX, 0, true) =
+    ceq $inferenceRules(MOD, DLIST, NDLIST, T, FAIL, PATH, PREC, MAX,
+                        0, true) =
         $handleFailure(MOD, DLIST, NDLIST, FAIL, PATH, MAX, 0)
         if PREC > MAX
         [print "PREC = " PREC ", T = " T " FAILING"] .
-    ceq $inferenceRules(MOD, DLIST, NDLIST, T, FAIL, PATH, PREC, MAX, 0, false) = T
+    ceq $inferenceRules(MOD, DLIST, NDLIST, T, FAIL, PATH, PREC, MAX,
+                        0, false) = T
         if PREC > MAX
         [print "PREC = " PREC ", T = " T] .
-    ceq $inferenceRules(MOD, DLIST, NDLIST, T, FAIL, PATH, PREC, MAX, BIGSKIP,
-                        FAILING) =
-        $detInferenceRules(MOD, DLIST, NDLIST, DQLIST, NDQLIST, T, FAIL, PATH,
-                           PREC, MAX, BIGSKIP, FAILING)
+    ceq $inferenceRules(MOD, DLIST, NDLIST, T, FAIL, PATH, PREC, MAX,
+                        BIGSKIP, FAILING) =
+        $detInferenceRules(MOD, DLIST, NDLIST, DQLIST, NDQLIST, T,
+                           FAIL, PATH, PREC, MAX, BIGSKIP, FAILING)
         if DQLIST := selectLabels(DLIST, PREC)
         /\ NDQLIST := selectLabels(NDLIST, PREC)
         [owise print "PREC = " PREC ", T = " T] .
 
-    op $detInferenceRules : Module RuleTripleList RuleTripleList QidList QidList
-                            Term Term Path Nat Nat Nat Bool -> Term? .
-    ceq $detInferenceRules(MOD, DLIST, NDLIST, DQLIST, NDQLIST, T, FAIL, PATH,
-                           PREC, MAX, BIGSKIP, FAILING) =
+    op $detInferenceRules : Module RuleTripleList RuleTripleList
+                            QidList QidList Term Term Path Nat Nat Nat
+                            Bool -> Term? .
+    ceq $detInferenceRules(MOD, DLIST, NDLIST, DQLIST, NDQLIST, T,
+                           FAIL, PATH, PREC, MAX, BIGSKIP, FAILING) =
         if T? :: Term
-            then $inferenceRules(MOD, DLIST, NDLIST, T?, FAIL, PATH det, 0,
-                                 MAX, BIGSKIP, false)
-            else $nondetInferenceRules(MOD, DLIST, NDLIST, DQLIST, NDQLIST, T,
-                                       FAIL, PATH, PREC, 0, MAX, BIGSKIP,
-                                       FAILING)
+            then $inferenceRules(MOD, DLIST, NDLIST, T?, FAIL, PATH det,
+                                 0, MAX, BIGSKIP, false)
+            else $nondetInferenceRules(MOD, DLIST, NDLIST, DQLIST,
+                                       NDQLIST, T, FAIL, PATH, PREC, 0,
+                                       MAX, BIGSKIP, FAILING)
         fi
         if T? := applyList(MOD, DQLIST, T, 0, 0) .
 
-    op $nondetInferenceRules : Module RuleTripleList RuleTripleList QidList
-                               QidList Term Term Path Nat Nat Nat Nat Bool
-                               -> Term? .
-    ceq $nondetInferenceRules(MOD, DLIST, NDLIST, DQLIST, NDQLIST, T, FAIL,
-                              PATH, PREC, SKIP, MAX, BIGSKIP, FAILING) =
+    op $nondetInferenceRules : Module RuleTripleList RuleTripleList
+                               QidList QidList Term Term Path Nat Nat
+                               Nat Nat Bool -> Term? .
+    ceq $nondetInferenceRules(MOD, DLIST, NDLIST, DQLIST, NDQLIST, T,
+                              FAIL, PATH, PREC, SKIP, MAX, BIGSKIP,
+                              FAILING) =
         if T? :: Term
             then $inferenceRules(MOD, DLIST, NDLIST, T?, FAIL,
-                                 PATH nondet(T, PREC, SKIP), 0, MAX, BIGSKIP,
-                                 false)
-            else $inferenceRules(MOD, DLIST, NDLIST, T, FAIL, PATH, PREC + 1,
-                                 MAX, BIGSKIP, FAILING)
+                                 PATH nondet(T, PREC, SKIP), 0, MAX,
+                                 BIGSKIP, false)
+            else $inferenceRules(MOD, DLIST, NDLIST, T, FAIL, PATH,
+                                 PREC + 1, MAX, BIGSKIP, FAILING)
         fi
         if T? := applyList(MOD, NDQLIST, T, 0, SKIP) .
 
-    op $handleFailure : Module RuleTripleList RuleTripleList Term Path Nat
-                        Nat -> Term? .
+    op $handleFailure : Module RuleTripleList RuleTripleList Term Path
+                        Nat Nat -> Term? .
     eq $handleFailure(MOD, DLIST, NDLIST, FAIL, PATH det, MAX, BIGSKIP) =
         $handleFailure(MOD, DLIST, NDLIST, FAIL, PATH, MAX, BIGSKIP) .
-    ceq $handleFailure(MOD, DLIST, NDLIST, FAIL, PATH nondet(T, PREC, SKIP),
+    ceq $handleFailure(MOD, DLIST, NDLIST, FAIL,
+                       PATH nondet(T, PREC, SKIP),
                        MAX, BIGSKIP) =
-        $nondetInferenceRules(MOD, DLIST, NDLIST, DQLIST, NDQLIST, T, FAIL,
-                              PATH, PREC, SKIP + 1, MAX, BIGSKIP, true)
+        $nondetInferenceRules(MOD, DLIST, NDLIST, DQLIST, NDQLIST, T,
+                              FAIL, PATH, PREC, SKIP + 1, MAX, BIGSKIP,
+                              true)
         if DQLIST := selectLabels(DLIST, PREC)
         /\ NDQLIST := selectLabels(NDLIST, PREC)
         [print "Backtracking..."] .
-    eq $handleFailure(MOD, DLIST, NDLIST, FAIL, nil, MAX, BIGSKIP) = failure .
+    eq $handleFailure(MOD, DLIST, NDLIST, FAIL, nil, MAX, BIGSKIP) =
+        failure .
 
     op rulesToList : RuleSet RuleType -> RuleTripleList .
     ceq rulesToList(R RS, RT) = TRIPLE rulesToList(RS, RT)
@@ -271,29 +309,4 @@ fmod INFERENCE is
     eq applyList(MOD, nil, T, N, SKIP) = failure
         [print "Failure to apply!"] .
 endfm
-
-mod TEST-RULES is
-    protecting QID-LIST .
-
-    sort QidList? .
-
-    op [_] : QidList -> QidList? [ctor] .
-    ops failure : -> QidList? [ctor] .
-
-    vars L L1 L2 : QidList .
-    vars Q : Qid .
-
-    crl [fail] : [L] => failure if check-fail(L, nil) [metadata "prec 0 det"] .
-    rl [replace1] : 'd => 'a [metadata "prec 1 nondet"] .
-    rl [replace2] : 'd => 'b [metadata "prec 1 nondet"] .
-    rl [replace3] : 'd => 'c [metadata "prec 1 nondet"] .
-
-    op check-fail : QidList QidList -> Bool .
-    eq check-fail(Q L1, L2) =
-        if Q =/= 'd and occurs(Q, L2)
-            then true
-            else check-fail(L1, Q L2)
-        fi .
-    eq check-fail(nil, L2) = false .
-endm
 

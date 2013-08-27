@@ -1,0 +1,18 @@
+    Maude> @/select TEST-BC-UNIFICATION ./@
+    Maude> @/red bc-unify('cons['u:Elt, 'V:List] =? 'bc['W:List, 'x:Elt],/@
+    > @/['BC], 'bc 'h 'cons 'nil.List 'Elt 'List, 0, 0) ./@
+    reduce in TEST-BC-UNIFICATION : bc-unify('cons['u:Elt,'V:List] =? 'bc[
+        'W:List,'x:Elt], ['BC], 'bc 'h 'cons 'nil.List 'Elt 'List, 0, 0) .
+    rewrites: 9223 in 106ms cpu (112ms real) (87009 rewrites/second)
+    result UnificationPair: {
+            'V:List <- 'bc['#3:List,'h['#4:Elt,'#5:Elt]] ;
+            'W:List <- 'cons['#4:Elt,'#3:List] ;
+            'u:Elt <- 'h['#4:Elt,'#5:Elt] ;
+            'x:Elt <- '#5:Elt,5}
+    Maude> @/red bc-unify('cons['u:Elt, 'V:List] =? 'bc['W:List, 'x:Elt],/@
+    > @/['BC], 'bc 'h 'cons 'nil.List 'Elt 'List, 0, 1) ./@
+    reduce in TEST-BC-UNIFICATION : bc-unify('cons['u:Elt,'V:List] =? 'bc[
+        'W:List,'x:Elt], ['BC], 'bc 'h 'cons 'nil.List 'Elt 'List, 0, 1) .
+    rewrites: 8898 in 39ms cpu (41ms real) (228153 rewrites/second)
+    result UnificationPair?: (noUnifier).UnificationPair?
+    Maude>

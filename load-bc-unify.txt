@@ -1,0 +1,31 @@
+    % @/maude/@
+                         \||||||||||||||||||/
+                       --- Welcome to Maude ---
+                         /||||||||||||||||||\
+                Maude 2.6 built: Jun  4 2013 14:32:21
+                Copyright 1997-2010 SRI International
+                       Tue Aug 27 00:27:04 2013
+    Maude> @/load bc-unification ./@
+    @@Advisory:@@ redefining module CAP.
+    @@Advisory:@@ redefining module APPLY.
+    @@Advisory:@@ redefining module TOOLS.
+    @@Advisory:@@ redefining module NAT-UTILS.
+    @@Advisory:@@ redefining module STRING-UTILS.
+    @@Advisory:@@ redefining module UNIFICATION-PAIR-UTILS.
+    @@Advisory:@@ redefining module CAP.
+    @@Advisory:@@ redefining module APPLY.
+    @@Advisory:@@ redefining module TOOLS.
+    @@Advisory:@@ redefining module NAT-UTILS.
+    @@Advisory:@@ redefining module STRING-UTILS.
+    @@Advisory:@@ redefining module UNIFICATION-PAIR-UTILS.
+    @@Advisory:@@ reparsing module INFERENCE due to changes in imported
+        modules.
+    @@Advisory:@@ reparsing module RULE-TRIPLE due to changes in imported
+        modules.
+    @@Advisory:@@ reexamining view RuleTriple.
+    @@Advisory:@@ reexamining view PathElement.
+    @@Advisory:@@ reparsing module PATH-ELEMENT due to changes in imported
+        modules.
+    @@Advisory:@@ reparsing module META-GRAPH due to changes in imported
+        modules.
+    Maude>

@@ -17,6 +17,7 @@
 \usepackage{multicol}
 \usepackage{listings}
 \usepackage{fancybox}
+%\usepackage{hyperref}
 
 \newcommand{\ueq}{=_{}^?}
 \newcommand{\compcirc}{\, {\scriptstyle{\circ}} \,}
@@ -55,9 +56,17 @@
 \newcommand{\Reduced}[1]{#1 \negmedspace\downarrow}
 \newcommand{\Sub}[2]{{\left.{#1}\right|_{#2}^{}}}
 
+\DeclareFontFamily{T1}{lmtt}{} 
+\DeclareFontShape{T1}{lmtt}{m}{n}{<-> ec-lmtl10}{} 
+\DeclareFontShape{T1}{lmtt}{m}{\itdefault}{<-> ec-lmtlo10}{} 
+\DeclareFontShape{T1}{lmtt}{\bfdefault}{n}{<-> ec-lmtk10}{} 
+\DeclareFontShape{T1}{lmtt}{\bfdefault}{\itdefault}{<-> ec-lmtko10}{} 
+
 % Default to setting ML in listings
 \lstset{
-    basicstyle=\ttfamily
+    basicstyle=\small\ttfamily,
+    moredelim=**[is][\itshape]{@/}{/@},
+    moredelim=**[is][\bfseries]{@@}{@@},
 }
 
 % Definition of Maude for lstlistings
@@ -66,11 +75,13 @@
     alsoletter={\:},
     morecomment=[l]{---},
     morecomment=[l]{***},
-    keywords={in, load, pr, protecting, sort, sorts, subsort, subsorts, including, class, msg, msgs, endfm, fmod, is, mod, endm, omod, endom},
+    keywords={load, pr, protecting, sort, sorts, subsort, subsorts, including,
+              class, msg, msgs, endfm, fmod, is, mod, endm, omod, endom, view,
+              endv, from, to},
     keywords=[2]{eq,  mb, ceq, if, rl, crl, else, then, fi},
-    keywords=[3]{ctor, assoc, comm, gather, id\:},
+    keywords=[3]{ctor, assoc, comm, gather, id\:, label, metadata, owise},
     keywords=[4]{op, ops, var, vars},
-    keywords=[5]{=, =>, ==, =/=}
+    keywords=[5]{=, =>, ->, ==, =/=, ~>, ::}
 }
 
 \makeatletter
@@ -187,7 +198,7 @@ her wonderful imagination has kept from straying \emph{too} close to sanity.
 \newpage
 \pagenumbering{arabic}
 
-\section{Introduction}
+\section{Introduction}\label{section:intro}
 
 Equational unification is an important research area with many applications in
 cryptographic protocol analysis, automated theorem proving, and automated
@@ -205,15 +216,15 @@ show how this can be used to solve problems modulo block chaining in specific.
 The notion of chaining corresponds performing a right fold of a list, but
 keeping the partial results. In ML, such a function might look like:
 \begin{lstlisting}[language=ML]
-       fun chain f z [] = []
-         | chain f z (x::ls) = f (z,x) :: chain f (f (z,x)) ls;
+    fun chain f z [] = []
+      | chain f z (x::ls) = f (z,x) :: chain f (f (z,x)) ls;
 \end{lstlisting}
 Note that the function \lstinline|chain| is a higher-order function, taking as
 its first argument a function \lstinline|f|. Since we are interested in
 first-order unification, we will generally consider chaining with a fixed
 function.
 
-\section{Notation and Preliminaries}
+\section{Notation and Preliminaries}\label{section:notation}
 
 We consider rewrite systems over ranked signatures, usually denoted $\Sigma$,
 and a possibly infinite set of variables, usually denoted $\X$. We assume the
@@ -228,7 +239,7 @@ the equation~\cite{Term}. A \emph{rewrite rule} is an equation $s \approx t$ whe
 $\Var(s) \supseteq \Var(t)$, usually written as~$s \to t$. A \emph{term rewriting
 system} is a set of rewrite rules.
 
-\subsection{Many-Sorted Signature}
+\subsection{Many-Sorted Signature}\label{subsection:signature}
 
 In this paper, we consider unification modulo a many-sorted algebra, with sorts
 $\Elt$ and $\List$ representing elements and lists, respectively.\footnote{In
@@ -249,7 +260,7 @@ We will use lower case names (e.g., $u$, $v$, $w$) for variables in $\X_E$, and
 uppercase names (e.g., $U$, $V$, $W$) for variables in $\X_L$. In general, variable
 names will use letters later in the alphabet.
 
-\subsection{Standard Form}
+\subsection{Standard Form}\label{subsection:standard-form}
 
 The algorithm assumes that the unification problem is given in \emph{standard form},
 in which each equation has one of the following forms:
@@ -264,7 +275,7 @@ $\p'$ in standard form such that unifiability is preserved and any unifier of
 $\p'$ is a unifier of $\p$. Doing so need only introduce a number of new variables
 linear in the size of the input problem.
 
-\section{The Theory of Chaining ($\BC$)}
+\section{The Theory of Chaining ($\BC$)}\label{section:theory}
 
 The theory of chaining, $\BC$ (for ``block chaining''), is given by the
 following two axioms:
@@ -282,7 +293,7 @@ When oriented from left to right into a rewrite system, $\BC$ is convergent.
 In ``Unification modulo Chaining'', it was shown that unification modulo $\BC$
 is finitary, but not unitary.
 
-\subsection{The Element Theory ($\HH$)}
+\subsection{The Element Theory ($\HH$)}\label{subsection:element-theory}
 
 Since chaining is a higher-order operation, we consider a fixed function $\Hh$.
 We assume there is a theory $\HH$ that interprets $\Hh$, which we call the
@@ -299,7 +310,7 @@ uninterpreted function symbol representing encryption with a fixed key $k$.
 Note that this latter interpretation, combined with $\BC$, is exactly the
 definition of block chaining.
 
-\section{Algorithm for Unification modulo Chaining}
+\section{Algorithm for Unification modulo Chaining}\label{section:algorithm}
 
 The algorithm in ``Uniication modulo Chaining'' is divided into two phases.
 The first phase is given by a system of inference rules that transform the
@@ -320,9 +331,9 @@ inference rule from the algorithm looks like:
 The premise (top) is matched against the current set of equations. If
 the match is successful, the set of equations is replaced by the conclusion
 (bottom), instantiated by the match. The full set of inference rules for the
-algorithm is given in~\ref{appendix:inference}.
+algorithm is given in Appendix~\ref{appendix:inference}.
 
-\subsection{Dependency Graph}
+\subsection{Dependency Graph}\label{subsection:graph}
 
 The algorithm also makes use of a graph structure to detect occur-check failure
 and $\Nil$-solutions. Given a set of equations $\EQ$, the \emph{list dependency
@@ -347,7 +358,7 @@ graph $G_L(\EQ)$:
 Since two list variables connected by $\sim_{\Bc}$ must be assigned lists with
 the same length by any unifier, $\succ_L$ can be interpreted as ``longer than''.
 
-\subsection{The $\Nonnil$ Set}
+\subsection{The $\Nonnil$ Set}\label{subsection:nonnil}
 
 The last data structure use by the algorithm is a set $\Nonnil \subseteq \X_L$
 of variables that \emph{must not} be set to $\Nil$ in any unifier of $\EQ$. The
@@ -358,7 +369,7 @@ set is defined as follows:
     \item If $(U \ueq V) \in \EQ$, then $U \in \Nonnil$ iff $V \in \Nonnil$.
 \end{enumerate}
 
-\section{Maude Implementation}
+\section{Maude Implementation}\label{section:maude}
 
 Our implementation of the unification algorithm is written in the Maude
 programming language, developed at the University of Illinois at
@@ -380,7 +391,7 @@ As much as possible, our implementation is built around general-purpose
 libraries rather than one-off solutions. To this end, there are a few big
 modules that deserve their own description.
 
-\subsection{The \lstinline|INFERENCE| Module}
+\subsection{The \lstinline|INFERENCE| Module}\label{subsection:inference-mod}
 
 Maude's notion of a rule corresponds nicely with the inference rules described
 previously. The main difference is that, while inference rules are applied
@@ -405,12 +416,12 @@ respectively).  For example, the inference rule given in
 Subsection~\ref{subsection:inference} is implemented in the module
 \lstinline|BC-INFERENCE| by the rule:
 \begin{lstlisting}[language=Maude]
-        rl [cancel-cons] :
-            bc-infer(U =? CONS[V, W] & U =? CONS[X, Y] & EQ,
-                     BC H CONS NIL ELT LIST, N)
-            => bc-infer(U =? CONS[V, W] & X =? V & Y =? W & EQ,
-                        BC H CONS NIL ELT LIST, N)
-            [metadata "prec 3 det"] .
+    rl [cancel-cons] :
+        bc-infer(U =? CONS[V, W] & U =? CONS[X, Y] & EQ,
+                 BC H CONS NIL ELT LIST, N)
+        => bc-infer(U =? CONS[V, W] & X =? V & Y =? W & EQ,
+                    BC H CONS NIL ELT LIST, N)
+        [metadata "prec 3 det"] .
 \end{lstlisting}
 The metadata \lstinline|"prec 3 det"| indicates that this rule has precedence~3
 (lower precedence rules are run more often) and that it deterministic (no
@@ -420,19 +431,19 @@ branching is required). The relative order of \lstinline|prec 3| and
 As an example of a nondeterministic rule, here is another rule from
 \lstinline|BC-INFERENCE|:
 \begin{lstlisting}[language=Maude]
-        rl [cancel-nondet] :
-            bc-infer(U =? BC[V, W] & U =? BC[X, Y] & EQ,
-                     BC H CONS NIL ELT LIST, N)
-            => bc-infer(U =? BC[V, W] & X =? V & Y =? W & EQ,
-                        BC H CONS NIL ELT LIST, N)
-            [metadata "prec 8 nondet"] .
+    rl [cancel-nondet] :
+        bc-infer(U =? BC[V, W] & U =? BC[X, Y] & EQ,
+                 BC H CONS NIL ELT LIST, N)
+        => bc-infer(U =? BC[V, W] & X =? V & Y =? W & EQ,
+                    BC H CONS NIL ELT LIST, N)
+        [metadata "prec 8 nondet"] .
 \end{lstlisting}
 This rule guesses that two $\Bc$-equations can be decomposed, but may fail. Its
 metadata contains \lstinline|nondet| to indicate that backtracking is required.
 
 The \lstinline|inferenceRules| operation has the following signature:
 \begin{lstlisting}[language=Maude]
-        op inferenceRules : Module Term Term Nat -> [Term] .
+    op inferenceRules : Module Term Term Nat -> [Term] .
 \end{lstlisting}
 It takes as its arguments a meta-representation of the module module in which
 to rewrite, a term representing the object to be rewritten, a term representing
@@ -443,9 +454,303 @@ specifies which solution is desired. Note that \lstinline|inferenceRules| is a
 partial function (its range is a kind); the operation is undefined if, for
 example, the module argument does not represent a valid module.
 
-\subsection{The \lstinline|GRAPH| and \lstinline|META-GRAPH| Modules}
+The full source code of \lstinline|INFERENCE| and related modules is given in
+Appendix~\ref{subappendix:inference-mod}.
 
-\subsection{The \lstinline|BC-UNIFICATION| Module}
+\subsection{The \lstinline|GRAPH| and \lstinline|META-GRAPH| Modules}
+\label{subsection:graph-mod}
+
+In order to implement the list dependency graph and cycle-checking, we need an
+implementation of graphs in Maude. Such an implementation should allow us to
+associate with edges arbitrary data (e.g., labels), and edges should be able to
+be directed and undirected (possibly within the same graph). Our solution is to
+parameterize graphs by the edges they contain. We define a theory
+\lstinline|EDGE| with the following sort declarations:
+\begin{lstlisting}[language=Maude]
+    sorts Node Edge NodeSet NeNodeSet .
+    subsorts Node < NeNodeSet < NodeSet .
+\end{lstlisting}
+In addition to these four sorts (and appropriate constructors for the sets),
+the \lstinline|EDGE| theory defines three destructor operations:
+\begin{lstlisting}[language=Maude]
+    op from : Edge Node -> Bool .
+    op to : Edge Node -> Bool .
+    op nodes : Edge -> NeNodeSet .
+\end{lstlisting}
+
+The first two are relations that detect if the edge is to or from the given
+node, respectively. The second evaluates to a set containing \emph{all} nodes
+in the edge, regardless of whether it is to or from a particular node.  The
+module \lstinline|GRAPH{E :: EDGE}| then defines graphs and paths in terms of
+edges and nodes.
+
+Graphs are defined as sets of edges. Note that Maude does not currently support
+mixing the \lstinline|assoc| (associative) and \lstinline|idem| (idempotent)
+attributes for operators, so we declare \lstinline!_||_! with \lstinline|assoc|
+and implement idempotency as an equation.
+\begin{lstlisting}[language=Maude]
+    sorts Graph{E} NeGraph{E} .
+    subsorts E$Edge < NeGraph{E} < Graph{E} .
+
+    op emptygraph : -> Graph{E} [ctor] .
+
+    op _||_ : Graph{E} Graph{E} -> Graph{E}
+        [assoc comm ctor id: emptygraph prec 80
+        format (d r os d)] .
+    op _||_ : NeGraph{E} Graph{E} -> NeGraph{E}
+        [ctor ditto] .
+\end{lstlisting}
+
+Paths are defined as sequences of edges. Membership axioms are used to ensure
+the sequence of edges is a valid path; if \lstinline|E1 E2| is a subsequence of
+a path, there must be at least one node \lstinline|N| such that
+\lstinline|to(E1, N)| and \lstinline|from(E2, N)|.
+\begin{lstlisting}[language=Maude]
+    sorts Path{E} NePath{E} Path?{E} .
+    subsorts E$Edge < NePath{E} < Path{E} < Path?{E} .
+
+    op noPath : -> Path?{E} [ctor] .
+
+    op emptypath : -> Path{E} [ctor] .
+    op __ : [Path{E}] [Path{E}] -> [Path{E}]
+        [ctor assoc id: emptypath] .
+\end{lstlisting}
+
+The \lstinline|GRAPH{E :: EDGE}| module provides three useful operations on
+graphs related to paths and cycles:
+\begin{lstlisting}[language=Maude]
+    op findPath : E$Node E$Node Graph{E} Nat -> Path?{E} .
+    op findNePath : E$Node E$Node Graph{E} Nat -> Path?{E} .
+    op hasCycle : Graph{E} -> Bool .
+\end{lstlisting}
+The first two search for paths in the a graph from the first node to the second.
+These operations are descent functions, so they take as their last argument the
+number of solutions to skip. The third operation checks if the given graph has
+a cycle --- i.e., a non-empty path from a node back to itself.
+
+The \lstinline|META-GRAPH{E :: EDGE}| module extends the \lstinline|GRAPH|
+module by allowing the path-searching and cycle-searching operations to check
+conditions and possibly reject paths. It provides extended versions of the
+three operations above:
+\begin{lstlisting}[language=Maude]
+    op findPath : E$Node E$Node Graph{E} Module Context Nat -> Path?{E} .
+    op findNePath : E$Node E$Node Graph{E} Module Context Nat -> Path?{E} .
+    op hasCycle : Graph{E} Module Context -> Bool .
+\end{lstlisting}
+The context and module are used to implement the condition. The context will
+be applied to the meta-representation of the current path candidate, and the
+resulting term will be rewritten in the module. If the result is \lstinline|true|,
+then the path is a solution. Otherwise it is discarded.
+
+\subsection{The \lstinline|BC-UNIFICATION| Module}\label{subsection:bc-unif-mod}
+
+\newpage
+\appendix
+
+\section{Inference Rules}\label{appendix:inference}
+
+Here is the complete system of inference rules for transforming a set of list
+equations into dag-solved form. The following rules are ``don't care''
+nondeterministic.
+\begin{description}
+    \item[(L1)] {\em Variable Elimination}:
+        \[\infer[\quad \text{if } U \text{ occurs in } \EQ ]
+            {[V/U](\EQ) ~ \cup ~ \{U \ueq V\} }
+            { \EQ ~ \cup ~ \{U \ueq V\} }
+        \]
+
+    \item[(L2)] {\em Cancellation on $cons$}:
+        \[\infer
+            {\EQ ~ \cup ~ \{ U \ueq cons(v, W), \; x \ueq v, \; Y \ueq W \}}
+            {\EQ ~ \uplus ~ \{ U \ueq cons(v, W), \; U \ueq cons(x, Y) \}}
+        \]
+
+    \item[(L3.a)] {\em Nil solution-1}:
+        \[\infer
+            {\EQ ~ \cup ~ \{ U \ueq nil, \; V \ueq nil \}}
+            {\EQ ~ \uplus ~ \{ U \ueq bc(V, w), \; U \ueq nil \}}
+        \]
+
+    \item[(L3.b)] {\em Nil solution-2}:
+        \[\infer
+            {\EQ ~ \cup ~ \{ U \ueq nil, \; V \ueq nil \}}
+            {\EQ ~ \uplus ~ \{ U \ueq bc(V, w), \; V \ueq nil \}}
+        \]
+
+    \item[(L3.c)] {\em Nil solution-3}:
+        \[\infer[\quad \mathrm{if} ~ V >_{bc}^{+} U ]
+            {\EQ ~ \cup ~ \{ U \ueq nil, \; V \ueq nil \}}
+            {\EQ ~ \uplus ~ \{ U \ueq bc(V, w) \}}
+        \]
+
+    \item[(L4.a)] {\em Semi-Cancellation on $bc$}, at a $bc/bc$-peak:
+        \[\infer
+            {\EQ ~ \cup ~ \{U \ueq bc(V, w), \; W \ueq V \}}
+            {\EQ ~ \uplus ~ \{ U \ueq bc(V, w), \; U \ueq bc(X, w) \}}
+        \]
+
+    \item[(L4.b)] {\em Push $bc$ below $cons$}, at a $\mathbf{nonnil}$ $bc/bc$-peak:
+        \[\infer[\quad \text{if } U \in \Nonnil]
+            {\begin{aligned}
+                \EQ ~ \cup ~ \{
+                & V \ueq cons(v', Z), \; X \ueq cons(x', Z), \;
+                  U \ueq cons(u', U''), \; \\[-4pt]
+                & U'' \ueq bc(Z, u'), \; u' \ueq h(v', w), \; u' \ueq h(x', y) \}
+            \end{aligned}}
+            {\EQ ~ \uplus ~ \{ U \ueq bc(V, w), \; U \ueq bc(X, y) \}}
+        \]
+
+    \item[(L5)] {\em Splitting}, at a $cons/bc$-peak:
+        \[\infer
+            {\EQ ~ \cup ~ \{ U \ueq cons(v, W) , \; X \ueq cons(x', X''), \;
+                             W \ueq bc(X'', v), \; v \ueq h(x', y) \}}
+            {\EQ ~ \uplus ~ \{ U \ueq cons(v, W), \;
+                               U \ueq bc(X, y) \}}
+        \]
+
+    \item[(L6)] {\em Occur-Check Violation}:
+        \[\infer[\quad \text{if } U \text{ occurs in } \EQ
+                 \text{ and }  U \succ_L U]
+            { FAIL }
+            { \EQ }
+        \]
+
+    \item[(L7)] {\em Size Conflict}:
+        \[\infer
+            { FAIL }
+            { \EQ ~ \uplus ~ \{ U \ueq cons(v, W), \; U \ueq nil \} }
+        \]
+\end{description}
+
+The remaining rules are ``don't know'' nondeterministic. Different orders of
+application will lead to different unifiers. A complete set of unifiers can
+be obtained by trying all branches.
+\begin{description}
+    \item[(L8)] {\em Nil-solution-Branch for $bc$\/}, at a $bc/bc$-peak:
+        \[\infer
+            {\EQ ~ \cup ~ \{ U \ueq nil, \; V \ueq nil, \; X \ueq nil \}}
+            {\EQ ~ \uplus ~ \{ U \ueq bc(V, w), \; U \ueq bc(X, y) \}}
+        \]
+
+    \item[(L9)] {\em Guess a non-Nil branch for $bc$\/}, at a $bc/bc$-peak:
+        \[\infer
+            {\begin{aligned}
+                \EQ ~ \cup ~ \{
+                & V \ueq cons(v', Z), \; X \ueq cons(x', Z), \;
+                  U \ueq cons(u', U''), \; \\[-4pt]
+                & U'' \ueq bc(Z, u'), \; u' \ueq h(v', w), \; u' \ueq h(x', y) \}
+            \end{aligned}}
+            {\EQ ~ \uplus ~ \{ U \ueq bc(V, w), \; U \ueq bc(X, y) \}}
+        \]
+
+    \item[(L10)] {\em Standard Unification on $bc$}:
+        \[\infer
+            {\EQ ~ \cup ~ \{ U \ueq bc(V, w), \; X \ueq V, \; y \ueq w \}}
+            {\EQ ~ \uplus ~ \{ U \ueq bc(V, w), \; U \ueq bc(X, y) \}}
+        \]
+\end{description}
+
+\newpage
+\section{Implementation}\label{appendix:implementation}
+
+This appendix contains the \emph{complete} Maude code of this implementation.
+It was written and tested in Maude 2.6 on a netbook running Gentoo GNU/Linux.
+Some sample sessions are provided in Appendix~\ref{appendix:samples}. All code
+is provided as-is.
+
+\subsection{The \lstinline|TOOLS| Module} \label{subappendix:tools-mod}
+\lstinputlisting[language=Maude]{tools.maude}
+\vspace{2em}
+
+\subsection{The \lstinline|APPLY| Module} \label{subappendix:apply-mod}
+\lstinputlisting[language=Maude]{apply.maude}
+\vspace{2em}
+
+\subsection{The \lstinline|INFERENCE| Module}\label{subappendix:inference-mod}
+\lstinputlisting[language=Maude]{inference.maude}
+\vspace{2em}
+
+\subsection{The \lstinline|GRAPH| and \lstinline|META-GRAPH| Modules}
+\label{subappendix:graph-mod}
+\lstinputlisting[language=Maude]{graph.maude}
+\vspace{2em}
+
+\subsection{The \lstinline|UNIFICAND-SET| Module}\label{subappendix:unificand-set-mod}
+\lstinputlisting[language=Maude]{unificand-set.maude}
+\vspace{2em}
+
+\subsection{The \lstinline|UNIFICATION-ALGORITHM| Theory}\label{subappendix:unif-alg-theory}
+\lstinputlisting[language=Maude]{unification-algorithm.maude}
+\vspace{2em}
+
+\subsection{The \lstinline|BC-UNIFICATION| Module}\label{subappendix:bc-unif-mod}
+\lstinputlisting[language=Maude]{bc-unification.maude}
+\vspace{2em}
+
+\subsection{The \lstinline|TEST-BC-UNIFICATION| Module}\label{subappendix:test-mod}
+\lstinputlisting[language=Maude]{bc-test.maude}
+
+\newpage
+\section{Sample Sessions}\label{appendix:samples}
+In this appendix some examples will be given of interacting with this project.
+There are two main entry points: the \lstinline|BC-UNIFICATION| module, or the
+\lstinline|TEST-BC-UNIFICATION| module. The former contains the actual
+$\BC$-unification operation: \lstinline|bc-unify|. The latter contains several
+predefined instances of $\BC$-unification for testing purposes.
+
+In the following examples, input will be given in \lstinline|@@italics@@|. The
+examples in sections~\ref{subappendix:using-bc-unif-mod}
+and~\ref{subappendix:using-bc-test-mod} assume Maude 2.6 has been started and
+all the source files have been \lstinline|load|ed.
+
+\subsection{Loading the Project into Maude}\label{subappendix:loading}
+
+Each source file in this project \lstinline|load|s the other source files that
+it needs. This leads to most modules being redefined or reparsed at least once
+(and common modules, such as \lstinline|TOOLS|, may be redefined several
+times). This is okay because it only needs to be done once when the project is
+loaded. The process could be streamlined by having one file act as master and
+\lstinline|load| the other files in the correct order, but we have decided to
+err in favor of modularity.
+\vspace{1ex}
+
+\lstinputlisting{load-bc-unify.txt}
+
+\subsection{Using \lstinline|BC-UNIFICATION| and \lstinline|bc-unify|}
+\label{subappendix:using-bc-unif-mod}
+
+The \lstinline|bc-unify| operation takes as arguments a
+\lstinline|UnificationProblem|, a meta-representation of a module, a signature,
+and two numbers, representing respectively the largest number of a new variable
+in the problem (e.g., \lstinline|'#6:Elt|) and the skip counter for the descent
+function. Unfortunately, we cannot rewrite interactively in the
+\lstinline|BC-UNIFICATION| module, because it is parameterized. It is more
+correctly called \lstinline|BC-UNIFICATION{ALG :: UNIFICATION-ALGORITHM}|.
+
+\subsection{Using \lstinline|TEST-BC-UNIFICATION|}
+\label{subappendix:using-bc-test-mod}
+
+For interactive testing, the \lstinline|TEST-BC-UNIFICATION| module provides a
+version of \lstinline|BC-UNIFICATION| instantiated with the view
+\lstinline|MetaUnifyAlg|, which uses the built-in unification operation
+\lstinline|metaUnify| from \lstinline|META-LEVEL|.
+\vspace{1ex}
+
+\lstinputlisting{bc-test-op-example.txt}
+
+The \lstinline|TEST-BC-UNIFICATION| module also defines some simple
+$\BC$-unification problems for testing. For example, there is an operator
+\begin{lstlisting}[language=Maude]
+    op test-cancel-cons : -> UnificationPair? .
+    eq test-cancel-cons =
+        bc-unify('U:List =? 'cons['V:Elt, 'W:List] /\
+                 'U:List =? 'cons['X:Elt, 'Y:List],
+                 module, signature, 0, 0) .
+\end{lstlisting}
+To try this input, we simply \lstinline|reduce| the operator:
+\vspace{1ex}
+
+\lstinputlisting{bc-test-pre-example.txt}
 
 \end{document}
 

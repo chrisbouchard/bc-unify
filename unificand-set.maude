@@ -1,5 +1,38 @@
-load apply
-load tools
+**********************************************************************
+*** unificand-set.maude
+***
+*** Copyright (c) 2013, Christopher Bouchard
+*** All rights reserved.
+***
+*** Redistribution and use in source and binary forms, with or without
+*** modification, are permitted provided that the following conditions
+*** are met:
+***
+***  * Redistributions of source code must retain the above copyright
+***    notice, this list of conditions and the following disclaimer.
+***
+***  * Redistributions in binary form must reproduce the above copyright
+***    notice, this list of conditions and the following disclaimer in
+***    the documentation and/or other materials provided with the
+***    distribution.
+***
+*** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+*** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+*** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+*** FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+*** COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+*** INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+*** BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+*** LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+*** CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+*** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+*** ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+*** POSSIBILITY OF SUCH DAMAGE.
+***
+**********************************************************************
+
+load apply .
+load tools .
 
 fmod UNIFICAND-SET is
     protecting APPLY .
@@ -7,9 +40,9 @@ fmod UNIFICAND-SET is
     protecting META-LEVEL .
     protecting TOOLS .
 
-    *** We define a new data structure for sets of equations (unificands),
-    *** since the built-in UnificationProblem leaves something to be
-    *** desired -- namely a unit.
+    *** We define a new data structure for sets of equations since
+    *** the built-in UnificationProblem leaves something to be desired
+    *** -- namely a unit.
 
     sorts UnificandSet EmptyUnificandSet NeUnificandSet .
     subsorts EmptyUnificandSet < UnificandSet .
@@ -32,7 +65,8 @@ fmod UNIFICAND-SET is
     vars C : Constant .
     vars F : Qid .
 
-    *** Convert a unification problem to a (nicer to work with) unificand set.
+    *** Convert a unification problem to a (nicer to work with)
+    *** unificand set.
     op problemToSet : UnificationProblem -> UnificandSet .
     eq problemToSet(T1 =? T2 /\ PROB) = T1 =? T2 & problemToSet(PROB) .
     eq problemToSet(T1 =? T2) = T1 =? T2 .
@@ -69,7 +103,8 @@ fmod STANDARD-FORM is
     sorts StUnificandSet NeStUnificandSet .
     subsorts EmptyUnificandSet < StUnificandSet .
     subsorts NeStUnificandSet < NeUnificandSet .
-    subsorts StUnificandPair < NeStUnificandSet < StUnificandSet < UnificandSet .
+    subsorts StUnificandPair < NeStUnificandSet < StUnificandSet
+             < UnificandSet .
 
     op _&_ : StUnificandSet StUnificandSet -> StUnificandSet
         [ctor ditto] .
@@ -104,12 +139,13 @@ fmod STANDARD-FORM is
     eq isVarList((C, TL)) = false .
     eq isVarList(empty) = true .
 
-    *** Decompose a problem into a corresponding problem in standard form.
-    *** We could do this more intelligently by reusing variables that have the
-    *** correct form already, but we don't for now.
+    *** Decompose a problem into a corresponding problem in standard
+    *** form.  We could do this more intelligently by reusing variables
+    *** that have the correct form already, but we don't for now.
     op decompose : Module UnificandSet Nat -> DecomposeResult? .
     ceq decompose(MOD, T1 =? T2 & EQ, N) =
-        --- This is probably too strong a condition, but it works for now.
+        --- This is probably too strong a condition, but it works for
+        --- now.
         if SORT1 == SORT2
             then decompose(MOD, U =? T1 & U =? T2 & EQ, N + 1)
             else noDecomposition
@@ -124,7 +160,8 @@ fmod STANDARD-FORM is
         /\ V := newVar*(N + 1, SORT) .
     eq decompose(MOD, EQ, N) = {EQ, N} [owise] .
 
-    *** Convert a unificand set in standard dag-solved form to a substitution.
+    *** Convert a unificand set in standard dag-solved form to a
+    *** substitution.
     op buildsub : StUnificandSet -> Substitution .
     ceq buildsub(U =? T & EQ) = SUB[U <- T] ; SUB
         if not occurs(U, EQ) /\ SUB := buildsub(EQ) .

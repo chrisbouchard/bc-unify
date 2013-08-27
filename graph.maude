@@ -1,5 +1,38 @@
-load apply
-load tools
+**********************************************************************
+*** graph.maude
+***
+*** Copyright (c) 2013, Christopher Bouchard
+*** All rights reserved.
+***
+*** Redistribution and use in source and binary forms, with or without
+*** modification, are permitted provided that the following conditions
+*** are met:
+***
+***  * Redistributions of source code must retain the above copyright
+***    notice, this list of conditions and the following disclaimer.
+***
+***  * Redistributions in binary form must reproduce the above copyright
+***    notice, this list of conditions and the following disclaimer in
+***    the documentation and/or other materials provided with the
+***    distribution.
+***
+*** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+*** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+*** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+*** FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+*** COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+*** INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+*** BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+*** LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+*** CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+*** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+*** ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+*** POSSIBILITY OF SUCH DAMAGE.
+***
+**********************************************************************
+
+load apply .
+load tools .
 
 fth EDGE is
     protecting BOOL .
@@ -33,22 +66,24 @@ fmod GRAPH{E :: EDGE} is
         [ctor ditto] .
 
 
-    *** Define the Path sort and its related subsorts and constructors. We
-    *** also provide a maybe type Path? to indicate failure to compute a path.
+    *** Define the Path sort and its related subsorts and constructors.
+    *** We also provide a maybe type Path? to indicate failure to
+    *** compute a path.
     sorts Path{E} NePath{E} Path?{E} .
     subsorts E$Edge < NePath{E} < Path{E} < Path?{E} .
 
     op noPath : -> Path?{E} [ctor] .
 
-    --- We only define the [Path{E}] kind for now. We'll use membership axioms
-    --- below to define the sort.
+    --- We only define the [Path{E}] kind for now. We'll use membership
+    --- axioms below to define the sort.
     op emptypath : -> Path{E} [ctor] .
-    op __ : [Path{E}] [Path{E}] -> [Path{E}] [ctor assoc id: emptypath] .
+    op __ : [Path{E}] [Path{E}] -> [Path{E}]
+        [ctor assoc id: emptypath] .
 
 
-    *** Define lists of graphs, which is mainly intended as an internal data
-    *** structure. We use these to implement a tail-recursive, backtracking
-    *** search for paths.
+    *** Define lists of graphs, which is mainly intended as an internal
+    *** data structure. We use these to implement a tail-recursive,
+    *** backtracking search for paths.
     sorts GraphList{E} .
     subsorts Graph{E} < GraphList{E} .
 
@@ -76,8 +111,8 @@ fmod GRAPH{E :: EDGE} is
         /\ to(E1, N2) /\ from(E2, N2) .
 
 
-    --- Graphs are idempotent, but we can't mix the assoc, comm, and idem
-    --- attributes.
+    --- Graphs are idempotent, but we can't mix the assoc, comm, and
+    --- idem attributes.
     eq E || E = E .
 
 
@@ -89,7 +124,8 @@ fmod GRAPH{E :: EDGE} is
 
     op hasCycle : Graph{E} -> Bool .
     ceq hasCycle(G) = true
-        if s(N, S) := graphnodes(G) /\ findNePath(N, N, G, 0) :: NePath{E} .
+        if s(N, S) := graphnodes(G)
+        /\ findNePath(N, N, G, 0) :: NePath{E} .
     eq hasCycle(G) = false [owise] .
 
 
@@ -116,17 +152,18 @@ fmod GRAPH{E :: EDGE} is
             then emptypath
             else findNePath(N, N, G, sd(SKIP, 1))
         fi .
-    eq findPath(NS, ND, G, SKIP) = findNePath(NS, ND, G, SKIP) [owise] .
+    eq findPath(NS, ND, G, SKIP) = findNePath(NS, ND, G, SKIP)
+        [owise] .
 
-    op findNePath : E$Node E$Node NeGraph{E} Nat -> Path?{E} .
+    op findNePath : E$Node E$Node Graph{E} Nat -> Path?{E} .
     eq findNePath(NS, ND, G, SKIP) =
         $findNePath(NS, NS, ND, emptypath, nil, G, SKIP) .
 
-    --- We keep the set of applicable nodes for each step in the path. Could
-    --- this be replaced with a skip counter? We'd need some way to order the
-    --- edges internally.
-    op $findNePath : E$Node E$Node E$Node Path{E} GraphList{E} Graph{E} Nat
-                     -> Path?{E} .
+    --- We keep the set of applicable nodes for each step in the path.
+    --- Could this be replaced with a skip counter? We'd need some way
+    --- to order the edges internally.
+    op $findNePath : E$Node E$Node E$Node Path{E} GraphList{E} Graph{E}
+                     Nat -> Path?{E} .
     ceq $findNePath(NS, NC, ND, P, GL, G, SKIP) =
         $findNePath(NS, N, ND, P E, (GL ; G'), G'', SKIP)
         if NC =/= ND or P == emptypath
@@ -145,10 +182,11 @@ fmod GRAPH{E :: EDGE} is
             else $revertNePath(NS, ND, ND, P, GL, G, sd(SKIP, 1))
         fi
         if P =/= emptypath
-        [print "NS=" NS " NC=" ND " ND=" ND " -- Solution found: SKIP=" SKIP] .
+        [print "NS=" NS " NC=" ND " ND=" ND " -- Solution found:"
+        " SKIP=" SKIP] .
 
-    op $revertNePath : E$Node E$Node E$Node Path{E} GraphList{E} Graph{E} Nat
-                       -> Path?{E} .
+    op $revertNePath : E$Node E$Node E$Node Path{E} GraphList{E}
+                       Graph{E} Nat -> Path?{E} .
     ceq $revertNePath(NS, NC, ND, P E, (GL ; G' || E'), G, SKIP) =
         $findNePath(NS, N2, ND, P E', (GL ; G'), G'', SKIP)
         if s(N1, NC, S1) := nodes(E) /\ s(N1, N2, S2) := nodes(E')
@@ -190,11 +228,13 @@ fmod META-GRAPH{E :: EDGE} is
     eq hasCycle(G, MOD, CTX) = false [owise] .
 
 
-    op findPath : E$Node E$Node Graph{E} Module Context Nat -> Path?{E} .
+    op findPath : E$Node E$Node Graph{E} Module Context Nat
+                  -> Path?{E} .
     eq findPath(N1, N2, G, MOD, CTX, BIGSKIP) =
         $findPath(N1, N2, G, MOD, CTX, 0, BIGSKIP, true) .
 
-    op findNePath : E$Node E$Node Graph{E} Module Context Nat -> Path?{E} .
+    op findNePath : E$Node E$Node Graph{E} Module Context Nat
+                    -> Path?{E} .
     eq findNePath(N1, N2, G, MOD, CTX, BIGSKIP) =
         $findPath(N1, N2, G, MOD, CTX, 0, BIGSKIP, false) .
 
@@ -209,7 +249,8 @@ fmod META-GRAPH{E :: EDGE} is
                     else $findPath(N1, N2, G, MOD, CTX, SKIP + 1,
                                    dec(BIGSKIP), EOK)
                 fi
-                else $findPath(N1, N2, G, MOD, CTX, SKIP + 1, BIGSKIP, EOK)
+                else $findPath(N1, N2, G, MOD, CTX, SKIP + 1, BIGSKIP,
+                               EOK)
             fi
             else noPath
         fi
@@ -221,7 +262,8 @@ fmod META-GRAPH{E :: EDGE} is
 
     op $checkPath : Module Context Path{E} -> Bool .
     ceq $checkPath(MOD, CTX, PATH) =
-        downTerm(getTerm(metaRewrite(MOD, CTX[upTerm(PATH)], unbounded)),
+        downTerm(getTerm(metaRewrite(MOD, CTX[upTerm(PATH)],
+                                     unbounded)),
                  false)
         if T := CTX[upTerm(PATH)]
         [print "Checking T=" T] .
