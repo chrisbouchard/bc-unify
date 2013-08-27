@@ -1,0 +1,55 @@
+    Maude> @/red test-nondet 0 ./@
+    reduce in TEST-BC-UNIFICATION : test-nondet 0 .
+    rewrites: 8488 in 104ms cpu (105ms real) (81615 rewrites/second)
+    result UnificationPair: {
+            'U:List <- 'nil.List ;
+            'V:List <- 'nil.List ;
+            'X:List <- 'nil.List,0}
+    Maude> @/red test-nondet 1 ./@
+    reduce in TEST-BC-UNIFICATION : test-nondet 1 .
+    rewrites: 9461 in 53ms cpu (55ms real) (178509 rewrites/second)
+    result UnificationPair: {
+            'U:List <- 'nil.List ;
+            'V:List <- 'nil.List ;
+            'X:List <- 'nil.List,0}
+    Maude> @/red test-nondet 2 ./@
+    reduce in TEST-BC-UNIFICATION : test-nondet 2 .
+    rewrites: 10930 in 54ms cpu (57ms real) (202407 rewrites/second)
+    result UnificationPair: {
+            'U:List <- 'bc['X:List,'#1:Elt] ;
+            'V:List <- 'X:List ;
+            'W:Elt <- '#1:Elt ;
+            'Y:Elt <- '#1:Elt,1}
+    Maude> @/red test-nondet 3 ./@
+    reduce in TEST-BC-UNIFICATION : test-nondet 3 .
+    rewrites: 12313 in 61ms cpu (61ms real) (201852 rewrites/second)
+    result UnificationPair: {
+            'U:List <- 'bc['V:List,'#1:Elt] ;
+            'W:Elt <- '#1:Elt ;
+            'X:List <- 'V:List ;
+            'Y:Elt <- '#1:Elt,1}
+    Maude> @/red test-nondet 4 ./@
+    reduce in TEST-BC-UNIFICATION : test-nondet 4 .
+    rewrites: 15294 in 72ms cpu (71ms real) (212416 rewrites/second)
+    result UnificationPair: {
+            'U:List <- 'cons['h['#6:Elt,'#7:Elt],'bc['#4:List,'h['#6:Elt,
+        '#7:Elt]]] ;
+            'V:List <- 'cons['#6:Elt,'#4:List] ;
+            'W:Elt <- '#7:Elt ;
+            'X:List <- 'cons['#6:Elt,'#4:List] ;
+            'Y:Elt <- '#7:Elt,7}
+    Maude> @/red test-nondet 5 ./@
+    reduce in TEST-BC-UNIFICATION : test-nondet 5 .
+    rewrites: 17860 in 80ms cpu (80ms real) (223250 rewrites/second)
+    result UnificationPair: {
+            'U:List <- 'cons['h['#6:Elt,'#7:Elt],'bc['#4:List,'h['#6:Elt,
+        '#7:Elt]]] ;
+            'V:List <- 'cons['#6:Elt,'#4:List] ;
+            'W:Elt <- '#7:Elt ;
+            'X:List <- 'cons['#6:Elt,'#4:List] ;
+            'Y:Elt <- '#7:Elt,7}
+    Maude> @/red test-nondet 6 ./@
+    reduce in TEST-BC-UNIFICATION : test-nondet 6 .
+    rewrites: 17511 in 88ms cpu (88ms real) (198988 rewrites/second)
+    result UnificationPair?: (noUnifier).UnificationPair?
+    Maude>

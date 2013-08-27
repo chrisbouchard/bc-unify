@@ -64,14 +64,17 @@
 
 % Default to setting ML in listings
 \lstset{
-    basicstyle=\small\ttfamily,
+    basicstyle=\ttfamily,
     moredelim=**[is][\itshape]{@/}{/@},
     moredelim=**[is][\bfseries]{@@}{@@},
 }
 
+\lstdefinestyle{smalllisting}{
+    basicstyle=\small\ttfamily,
+}
+
 % Definition of Maude for lstlistings
-\lstdefinelanguage{Maude}
-{
+\lstdefinelanguage{Maude}{
     alsoletter={\:},
     morecomment=[l]{---},
     morecomment=[l]{***},
@@ -79,7 +82,8 @@
               class, msg, msgs, endfm, fmod, is, mod, endm, omod, endom, view,
               endv, from, to},
     keywords=[2]{eq,  mb, ceq, if, rl, crl, else, then, fi},
-    keywords=[3]{ctor, assoc, comm, gather, id\:, label, metadata, owise},
+    keywords=[3]{ctor, assoc, comm, gather, id\:, label, metadata, owise, prec,
+                 special},
     keywords=[4]{op, ops, var, vars},
     keywords=[5]{=, =>, ->, ==, =/=, ~>, ::}
 }
@@ -212,32 +216,46 @@ her from attacking individual blocks in parallel.
 In ``Unification modulo Chaining'', the authors present an algorithm for
 solving unification problems modulo a general theory of \emph{chaining}, then
 show how this can be used to solve problems modulo block chaining in specific.
-
 The notion of chaining corresponds performing a right fold of a list, but
 keeping the partial results. In ML, such a function might look like:
-\begin{lstlisting}[language=ML]
+\begin{lstlisting}[language=ML, style=smalllisting]
     fun chain f z [] = []
       | chain f z (x::ls) = f (z,x) :: chain f (f (z,x)) ls;
+\end{lstlisting}
+For example, we can combine \lstinline|chain| with addition, in which case we
+get partial sums:
+\begin{lstlisting}[language=ML, style=smalllisting]
+    - chain (op +) 0 [1, 2, 3, 4];
+    > val it = [1, 3, 6, 10] : int list
 \end{lstlisting}
 Note that the function \lstinline|chain| is a higher-order function, taking as
 its first argument a function \lstinline|f|. Since we are interested in
 first-order unification, we will generally consider chaining with a fixed
 function.
 
+One of the motivations behind this implementation is a tool called The
+Maude-NPA\footnote{Maude-NPA: \url{http://maude.cs.uiuc.edu/tools/Maude-NPA/}},
+developed at the Naval Research Lab. Maude-NPA uses term-rewriting and algebraic
+properties to analyze cryptographic protocols at a symbolic level.
+
+For our implementation, we chose the language Maude\footnote{The Maude System:
+\url{http://maude.cs.uiuc.edu/}}, which is a popular rewriting-based
+programming language. Tools such as Maude-NPA\footnote{Maude-NPA:
+\url{http://maude.cs.uiuc.edu/tools/Maude-NPA/}} take advantage of Maude's
+powerful reflective and symbolic capabilities. More details about the language
+will be given in Section~\ref{section:maude}.
+
 \section{Notation and Preliminaries}\label{section:notation}
 
 We consider rewrite systems over ranked signatures, usually denoted $\Sigma$,
 and a possibly infinite set of variables, usually denoted $\X$. We assume the
 reader is familiar with the usual notions and concepts in term rewriting
-systems~\cite{Term} and equational unification~\cite{BaaderSnyd-01}. The set of
-all terms over~$\Sigma$ and~$\X$ is denoted as $T(\Sigma, \X)$. Given a term
-$t$, we denote by $\Pos(t)$ the set of all positions in $t$, and by $\FPos(t)$
-the set of all non-variable positions in $t$. An \emph{equation}, e.g. in
-\cite{Term} is an ordered pair of terms $(s, \, t)$, usually written as $s
-\approx t$. Here $s$~is the \emph{left-hand side} and $t$~is the \emph{right-hand side} of
-the equation~\cite{Term}. A \emph{rewrite rule} is an equation $s \approx t$ where
-$\Var(s) \supseteq \Var(t)$, usually written as~$s \to t$. A \emph{term rewriting
-system} is a set of rewrite rules.
+systems~\cite{Term} and equational unification~\cite{BaaderSnyd-01}.  An
+\emph{equation}, e.g. in \cite{Term} is an ordered pair of terms $(s, \, t)$,
+usually written as $s \approx t$. Here $s$~is the \emph{left-hand side} and
+$t$~is the \emph{right-hand side} of the equation~\cite{Term}. A \emph{rewrite
+rule} is an equation $s \approx t$ where $\Var(s) \supseteq \Var(t)$, usually
+written as~$s \to t$. A \emph{term rewriting system} is a set of rewrite rules.
 
 \subsection{Many-Sorted Signature}\label{subsection:signature}
 
@@ -373,13 +391,12 @@ set is defined as follows:
 
 Our implementation of the unification algorithm is written in the Maude
 programming language, developed at the University of Illinois at
-Urbana-Champaign. Maude, according to its website\footnote{The Maude System:
-\url{http://maude.cs.uiuc.edu/}}, is ``a high-performance reflective language
-supporting both equation and rewriting logic specification''. This excellent
-support for reflective programming makes Maude an attractive target for
-applications related to term-rewriting, because implementors can turn Maude's
-powerful unification and rewriting capabilities back on terms at the
-meta-level.
+Urbana-Champaign. Maude, according to its website, is ``a high-performance
+reflective language supporting both equation and rewriting logic
+specification''. This excellent support for reflective programming makes Maude
+an attractive target for applications related to term-rewriting, because
+implementors can turn Maude's powerful unification and rewriting capabilities
+back on terms at the meta-level.
 
 Maude programs are built around \emph{modules}, which correspond to rewrite
 systems in term-rewriting. Modules contain definitions of sorts, subsort
@@ -389,7 +406,8 @@ rules have no such restrictions.
 
 As much as possible, our implementation is built around general-purpose
 libraries rather than one-off solutions. To this end, there are a few big
-modules that deserve their own description.
+modules that deserve their own description. The full source code for this
+project is given in Appendix~\ref{appendix:implementation}.
 
 \subsection{The \lstinline|INFERENCE| Module}\label{subsection:inference-mod}
 
@@ -415,7 +433,7 @@ nondeterministic (corresponding to ``don't-care'' and ``don't-know'',
 respectively).  For example, the inference rule given in
 Subsection~\ref{subsection:inference} is implemented in the module
 \lstinline|BC-INFERENCE| by the rule:
-\begin{lstlisting}[language=Maude]
+\begin{lstlisting}[language=Maude, style=smalllisting]
     rl [cancel-cons] :
         bc-infer(U =? CONS[V, W] & U =? CONS[X, Y] & EQ,
                  BC H CONS NIL ELT LIST, N)
@@ -430,7 +448,7 @@ branching is required). The relative order of \lstinline|prec 3| and
 
 As an example of a nondeterministic rule, here is another rule from
 \lstinline|BC-INFERENCE|:
-\begin{lstlisting}[language=Maude]
+\begin{lstlisting}[language=Maude, style=smalllisting]
     rl [cancel-nondet] :
         bc-infer(U =? BC[V, W] & U =? BC[X, Y] & EQ,
                  BC H CONS NIL ELT LIST, N)
@@ -442,7 +460,7 @@ This rule guesses that two $\Bc$-equations can be decomposed, but may fail. Its
 metadata contains \lstinline|nondet| to indicate that backtracking is required.
 
 The \lstinline|inferenceRules| operation has the following signature:
-\begin{lstlisting}[language=Maude]
+\begin{lstlisting}[language=Maude, style=smalllisting]
     op inferenceRules : Module Term Term Nat -> [Term] .
 \end{lstlisting}
 It takes as its arguments a meta-representation of the module module in which
@@ -466,13 +484,13 @@ associate with edges arbitrary data (e.g., labels), and edges should be able to
 be directed and undirected (possibly within the same graph). Our solution is to
 parameterize graphs by the edges they contain. We define a theory
 \lstinline|EDGE| with the following sort declarations:
-\begin{lstlisting}[language=Maude]
+\begin{lstlisting}[language=Maude, style=smalllisting]
     sorts Node Edge NodeSet NeNodeSet .
     subsorts Node < NeNodeSet < NodeSet .
 \end{lstlisting}
 In addition to these four sorts (and appropriate constructors for the sets),
 the \lstinline|EDGE| theory defines three destructor operations:
-\begin{lstlisting}[language=Maude]
+\begin{lstlisting}[language=Maude, style=smalllisting]
     op from : Edge Node -> Bool .
     op to : Edge Node -> Bool .
     op nodes : Edge -> NeNodeSet .
@@ -488,7 +506,7 @@ Graphs are defined as sets of edges. Note that Maude does not currently support
 mixing the \lstinline|assoc| (associative) and \lstinline|idem| (idempotent)
 attributes for operators, so we declare \lstinline!_||_! with \lstinline|assoc|
 and implement idempotency as an equation.
-\begin{lstlisting}[language=Maude]
+\begin{lstlisting}[language=Maude, style=smalllisting]
     sorts Graph{E} NeGraph{E} .
     subsorts E$Edge < NeGraph{E} < Graph{E} .
 
@@ -505,7 +523,7 @@ Paths are defined as sequences of edges. Membership axioms are used to ensure
 the sequence of edges is a valid path; if \lstinline|E1 E2| is a subsequence of
 a path, there must be at least one node \lstinline|N| such that
 \lstinline|to(E1, N)| and \lstinline|from(E2, N)|.
-\begin{lstlisting}[language=Maude]
+\begin{lstlisting}[language=Maude, style=smalllisting]
     sorts Path{E} NePath{E} Path?{E} .
     subsorts E$Edge < NePath{E} < Path{E} < Path?{E} .
 
@@ -518,7 +536,7 @@ a path, there must be at least one node \lstinline|N| such that
 
 The \lstinline|GRAPH{E :: EDGE}| module provides three useful operations on
 graphs related to paths and cycles:
-\begin{lstlisting}[language=Maude]
+\begin{lstlisting}[language=Maude, style=smalllisting]
     op findPath : E$Node E$Node Graph{E} Nat -> Path?{E} .
     op findNePath : E$Node E$Node Graph{E} Nat -> Path?{E} .
     op hasCycle : Graph{E} -> Bool .
@@ -532,7 +550,7 @@ The \lstinline|META-GRAPH{E :: EDGE}| module extends the \lstinline|GRAPH|
 module by allowing the path-searching and cycle-searching operations to check
 conditions and possibly reject paths. It provides extended versions of the
 three operations above:
-\begin{lstlisting}[language=Maude]
+\begin{lstlisting}[language=Maude, style=smalllisting]
     op findPath : E$Node E$Node Graph{E} Module Context Nat -> Path?{E} .
     op findNePath : E$Node E$Node Graph{E} Module Context Nat -> Path?{E} .
     op hasCycle : Graph{E} Module Context -> Bool .
@@ -659,36 +677,36 @@ Some sample sessions are provided in Appendix~\ref{appendix:samples}. All code
 is provided as-is.
 
 \subsection{The \lstinline|TOOLS| Module} \label{subappendix:tools-mod}
-\lstinputlisting[language=Maude]{tools.maude}
+\lstinputlisting[language=Maude, style=smalllisting]{tools.maude}
 \vspace{2em}
 
 \subsection{The \lstinline|APPLY| Module} \label{subappendix:apply-mod}
-\lstinputlisting[language=Maude]{apply.maude}
+\lstinputlisting[language=Maude, style=smalllisting]{apply.maude}
 \vspace{2em}
 
 \subsection{The \lstinline|INFERENCE| Module}\label{subappendix:inference-mod}
-\lstinputlisting[language=Maude]{inference.maude}
+\lstinputlisting[language=Maude, style=smalllisting]{inference.maude}
 \vspace{2em}
 
 \subsection{The \lstinline|GRAPH| and \lstinline|META-GRAPH| Modules}
 \label{subappendix:graph-mod}
-\lstinputlisting[language=Maude]{graph.maude}
+\lstinputlisting[language=Maude, style=smalllisting]{graph.maude}
 \vspace{2em}
 
 \subsection{The \lstinline|UNIFICAND-SET| Module}\label{subappendix:unificand-set-mod}
-\lstinputlisting[language=Maude]{unificand-set.maude}
+\lstinputlisting[language=Maude, style=smalllisting]{unificand-set.maude}
 \vspace{2em}
 
 \subsection{The \lstinline|UNIFICATION-ALGORITHM| Theory}\label{subappendix:unif-alg-theory}
-\lstinputlisting[language=Maude]{unification-algorithm.maude}
+\lstinputlisting[language=Maude, style=smalllisting]{unification-algorithm.maude}
 \vspace{2em}
 
 \subsection{The \lstinline|BC-UNIFICATION| Module}\label{subappendix:bc-unif-mod}
-\lstinputlisting[language=Maude]{bc-unification.maude}
+\lstinputlisting[language=Maude, style=smalllisting]{bc-unification.maude}
 \vspace{2em}
 
 \subsection{The \lstinline|TEST-BC-UNIFICATION| Module}\label{subappendix:test-mod}
-\lstinputlisting[language=Maude]{bc-test.maude}
+\lstinputlisting[language=Maude, style=smalllisting]{bc-test.maude}
 
 \newpage
 \section{Sample Sessions}\label{appendix:samples}
@@ -714,7 +732,7 @@ loaded. The process could be streamlined by having one file act as master and
 err in favor of modularity.
 \vspace{1ex}
 
-\lstinputlisting{load-bc-unify.txt}
+\lstinputlisting[style=smalllisting]{load-bc-unify.txt}
 
 \subsection{Using \lstinline|BC-UNIFICATION| and \lstinline|bc-unify|}
 \label{subappendix:using-bc-unif-mod}
@@ -733,14 +751,34 @@ correctly called \lstinline|BC-UNIFICATION{ALG :: UNIFICATION-ALGORITHM}|.
 For interactive testing, the \lstinline|TEST-BC-UNIFICATION| module provides a
 version of \lstinline|BC-UNIFICATION| instantiated with the view
 \lstinline|MetaUnifyAlg|, which uses the built-in unification operation
-\lstinline|metaUnify| from \lstinline|META-LEVEL|.
+\lstinline|metaUnify| from \lstinline|META-LEVEL|. The problem is given as
+set of equations separated by \lstinline|/\| (slash-backslash or ``wedge'').
+Equations are given as a pair of terms separated by \lstinline|=?|
+(equals-question-mark).
+
+The module is any valid object of sort \lstinline|Module|. Most commonly, this
+is obtained by one of
+\begin{lstlisting}[language=Maude, style=smalllisting]
+    op upModule : [Qid] [Bool] -> [Module] [special (...)] .
+    op [_] : Qid -> Module [prec 0 gather (&)] .
+\end{lstlisting}
+The first returns a meta-representation of the module with the given name. The
+boolean indicates whether imported modules should be flattened into the
+meta-representation. The second returns a new module that protects the module
+with the given name. This generally has a smaller meta-representation than the
+module itself, so may save some memory.
+
+Finally, the signature is given as a whitespace-separated list of identifiers.
+The order is: $\Bc$, $\Hh$, $\Cons$, $\Nil$, $\Elt$, $\List$. Note that the
+identifier for $\Nil$ must be of sort \lstinline|Constant|, i.e., it must
+include the sort in its name (e.g., \lstinline|nil.List|).
 \vspace{1ex}
 
-\lstinputlisting{bc-test-op-example.txt}
+\lstinputlisting[style=smalllisting]{bc-test-op-example.txt}
 
 The \lstinline|TEST-BC-UNIFICATION| module also defines some simple
 $\BC$-unification problems for testing. For example, there is an operator
-\begin{lstlisting}[language=Maude]
+\begin{lstlisting}[language=Maude, style=smalllisting]
     op test-cancel-cons : -> UnificationPair? .
     eq test-cancel-cons =
         bc-unify('U:List =? 'cons['V:Elt, 'W:List] /\
@@ -750,7 +788,22 @@ $\BC$-unification problems for testing. For example, there is an operator
 To try this input, we simply \lstinline|reduce| the operator:
 \vspace{1ex}
 
-\lstinputlisting{bc-test-pre-example.txt}
+\lstinputlisting[style=smalllisting]{bc-test-pre-example.txt}
+\vspace{1ex}
+
+The only non-constant test operation in \lstinline|TEST-BC-UNIFICATION| is
+\begin{lstlisting}[language=Maude, style=smalllisting]
+    op test-nondet_ : Nat -> UnificationPair? .
+    eq test-nondet N =
+        bc-unify('U:List =? 'bc['V:List, 'W:Elt] /\
+                 'U:List =? 'bc['X:List, 'Y:Elt],
+                 module, signature, 0, N) .
+\end{lstlisting}
+which tests the non-deterministic rules. The number is passed to
+\lstinline|bc-unify| as its skip parameter.
+\vspace{1ex}
+
+\lstinputlisting[style=smalllisting]{test-nondet-example.txt}
 
 \end{document}
 
