@@ -181,18 +181,19 @@ I would like to thank my coauthors on ``Unification modulo Chaining,'' Siva
 Anantharaman, Dr.\ Narendran, and Micha\"{e}l Rusinowitch, for their patience
 and expertise while I learned the ropes of academic writing.
 
-I would like to thank my academic brothers, Andrew Marshall and Serdar Erbatur,
-for taking the time to mentor and encourage a first year grad student. I now
-\emph{fully} understand how busy they must have been.
+I would like to thank my academic older brothers, Andrew Marshall and Serdar
+Erbatur, for taking the time to mentor and encourage a first year grad student.
+I now \emph{fully} understand how busy they must have been.
 I would also like to thank my friends and teammates, Kim Gero, Peter Hibbs, and
 Andrew ``Basil'' Matusiewicz, for making this department a place that I look
-forward to going every day. I do not think I could have made it this far
+forward to going every day. This journey would have been much more arduous
 without their camaraderie.
 
 I would like to thank my parents for their continued support.
 And I would like to thank my girlfriend, Mary Ferro, for more than I can say.
-Her love and belief in me when I had lost my confidence have kept me going, and
-her wonderful imagination has kept from straying \emph{too} close to sanity.
+Beyond just listening to my babbling about algorithms and ``the paper'', her
+love and belief in me when I had lost my confidence have kept me going. Thank
+you.
 \end{quotation}
 
 \newpage
@@ -235,15 +236,14 @@ function.
 
 One of the motivations behind this implementation is a tool called The
 Maude-NPA\footnote{Maude-NPA: \url{http://maude.cs.uiuc.edu/tools/Maude-NPA/}},
-developed at the Naval Research Lab. Maude-NPA uses term-rewriting and algebraic
-properties to analyze cryptographic protocols at a symbolic level.
-
-For our implementation, we chose the language Maude\footnote{The Maude System:
-\url{http://maude.cs.uiuc.edu/}}, which is a popular rewriting-based
-programming language. Tools such as Maude-NPA\footnote{Maude-NPA:
-\url{http://maude.cs.uiuc.edu/tools/Maude-NPA/}} take advantage of Maude's
-powerful reflective and symbolic capabilities. More details about the language
-will be given in Section~\ref{section:maude}.
+developed at the Naval Research Lab. Maude-NPA uses term-rewriting and
+algebraic properties to analyze cryptographic protocols at a symbolic level.
+The Maude-NPA project needs implementations of unification algorithms for as
+many different cryptographic functions and protocols as possible. The fact that
+Maude-NPA is written in Maude\footnote{The Maude System:
+\url{http://maude.cs.uiuc.edu/}}, combined with Maude's excellent reflective
+and rewriting capabilities, made the language a good choice for our
+implementation.
 
 \section{Notation and Preliminaries}\label{section:notation}
 
@@ -259,13 +259,13 @@ written as~$s \to t$. A \emph{term rewriting system} is a set of rewrite rules.
 
 \subsection{Many-Sorted Signature}\label{subsection:signature}
 
-In this paper, we consider unification modulo a many-sorted algebra, with sorts
-$\Elt$ and $\List$ representing elements and lists, respectively.\footnote{In
-``Unification modulo Chaining'', the names $\tau_e$ and $\tau_l$ are used for
-$\Elt$ and $\List$, respectively.} Each function symbol in $\Sigma$ has an
-associated type signature, and terms that are not well-typed are considered
-syntactically invalid. The function symbols and their type signatures are given
-below:
+In this paper, we consider unification modulo a many-sorted algebra, with
+disjoint sorts $\Elt$ and $\List$ representing elements and lists,
+respectively.\footnote{In ``Unification modulo Chaining'', the names $\tau_e$
+and $\tau_l$ are used for $\Elt$ and $\List$, respectively.} Each function
+symbol in $\Sigma$ has an associated type signature, and terms that are not
+well-typed are considered syntactically invalid. The function symbols and their
+type signatures are given below:
 \begin{align*}
     \Bc \colon &\List \times \Elt \to \List &
     \Cons \colon &\Elt \times \List \to \List \\
@@ -309,7 +309,8 @@ constructors.
 
 When oriented from left to right into a rewrite system, $\BC$ is convergent.
 In ``Unification modulo Chaining'', it was shown that unification modulo $\BC$
-is finitary, but not unitary.
+is finitary, but not unitary. The rewrite system is clearly subterm-collapsing
+due to the first axiom.
 
 \subsection{The Element Theory ($\HH$)}\label{subsection:element-theory}
 
@@ -320,6 +321,7 @@ $\Hh$ should be semi-cancellative. A function symbol is semi-cancellative iff
 it has the property that:
 \[ \Hh(t_1, s_1) \approx_\HH^{} \Hh(t_2, s_2) \quad \Rightarrow \quad
 t_1 \approx_\HH^{} t_2 \; \Leftrightarrow \; s_1 \approx_\HH^{} s_2 \]
+for any terms $t_1, s_1, t_2, s_2$.
 
 Two element theories were considered in ``Unification modulo Chaining'': one in
 which $\Hh$ is left uninterpreted, and another in which $\Hh$ is interpreted by
@@ -561,6 +563,10 @@ resulting term will be rewritten in the module. If the result is \lstinline|true
 then the path is a solution. Otherwise it is discarded.
 
 \subsection{The \lstinline|BC-UNIFICATION| Module}\label{subsection:bc-unif-mod}
+
+This module is the heart of the project. It uses the \lstinline|inferenceRules|
+stragtegy from \lstinline|INFERENCE| to apply the inference rules implemented
+in \lstinline|BC-INFERENCE|.
 
 \newpage
 \appendix
