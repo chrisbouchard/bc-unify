@@ -1,6 +1,6 @@
     Maude> @/red test-cancel-cons ./@
     reduce in TEST-BC-UNIFICATION : test-cancel-cons .
-    rewrites: 7700 in 45ms cpu (47ms real) (171111 rewrites/second)
+    rewrites: 7729 in 39ms cpu (38ms real) (198179 rewrites/second)
     result UnificationPair: {
             'U:List <- 'cons['#1:Elt,'Y:List] ;
             'V:Elt <- '#1:Elt ;

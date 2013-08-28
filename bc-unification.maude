@@ -162,12 +162,11 @@ fmod BC-UNIFICATION{ALG :: UNIFICATION-ALGORITHM} is
         noSignature) .
 
     op protect : ModuleExpression -> Module .
-    ceq [MODEX] = (th 'TEMP is
-                       including MODEX .
-                       sorts none .
-                       none none none none none
-                   endth)
-        if not (MODEX :: Qid) .
+    eq protect(MODEX) = (th 'TEMP is
+                             including MODEX .
+                             sorts none .
+                             none none none none none
+                         endth) .
 
     op next-phase : [UnificationPair?] Module -> [UnificationPair?] .
     eq next-phase(PAIR, MOD) = PAIR .

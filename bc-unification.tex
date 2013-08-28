@@ -17,7 +17,7 @@
 \usepackage{multicol}
 \usepackage{listings}
 \usepackage{fancybox}
-%\usepackage{hyperref}
+\usepackage{hyperref}
 
 \newcommand{\ueq}{=_{}^?}
 \newcommand{\compcirc}{\, {\scriptstyle{\circ}} \,}
@@ -83,7 +83,7 @@
               endv, from, to},
     keywords=[2]{eq,  mb, ceq, if, rl, crl, else, then, fi},
     keywords=[3]{ctor, assoc, comm, gather, id\:, label, metadata, owise, prec,
-                 special},
+                 special, ditto, format},
     keywords=[4]{op, ops, var, vars},
     keywords=[5]{=, =>, ->, ==, =/=, ~>, ::}
 }
@@ -474,9 +474,6 @@ specifies which solution is desired. Note that \lstinline|inferenceRules| is a
 partial function (its range is a kind); the operation is undefined if, for
 example, the module argument does not represent a valid module.
 
-The full source code of \lstinline|INFERENCE| and related modules is given in
-Appendix~\ref{subappendix:inference-mod}.
-
 \subsection{The \lstinline|GRAPH| and \lstinline|META-GRAPH| Modules}
 \label{subsection:graph-mod}
 
@@ -557,16 +554,41 @@ three operations above:
     op findNePath : E$Node E$Node Graph{E} Module Context Nat -> Path?{E} .
     op hasCycle : Graph{E} Module Context -> Bool .
 \end{lstlisting}
-The context and module are used to implement the condition. The context will
-be applied to the meta-representation of the current path candidate, and the
-resulting term will be rewritten in the module. If the result is \lstinline|true|,
-then the path is a solution. Otherwise it is discarded.
+The context and module are used to implement the condition. The context will be
+applied to the meta-representation of the current path candidate, and the
+resulting term will be rewritten at the meta-level in the given module. If the
+result is \lstinline|true|, then the path is a solution. Otherwise it is
+discarded.
 
 \subsection{The \lstinline|BC-UNIFICATION| Module}\label{subsection:bc-unif-mod}
 
 This module is the heart of the project. It uses the \lstinline|inferenceRules|
 stragtegy from \lstinline|INFERENCE| to apply the inference rules implemented
-in \lstinline|BC-INFERENCE|.
+in \lstinline|BC-INFERENCE|. The unification operator is called
+\lstinline|bc-unify|, which takes as arguments a
+\lstinline|UnificationProblem|, a meta-representation of a view from
+\lstinline|BC|, and two numbers, representing respectively the largest number
+of a new variable in the problem (e.g., \lstinline|'#6:Elt|) and the skip
+counter for the descent function.
+
+The \lstinline|View| parameter must be the meta-representation of a view from
+\lstinline|BC| to the user's module. It is assumed that the view is in the
+system \emph{at the object level}. To the best of our knowledge, Maude does not
+have any feature for instantiating a parameterized module with a view that only
+exists at the meta-level.
+
+From the view, we extract a signature, which contains the names of the symbols
+for $\Bc$, $\Hh$, $\Cons$, $\Nil$, $\Elt$, and $\List$. A module
+\lstinline|BC-SIGNATURE| is provided with the default names for these symbols, as
+well as a view \lstinline|BcSignature| from \lstinline|BC| to
+\lstinline|BC-SIGNATURE|.
+
+For examples of using \lstinline|bc-unify| and the \lstinline|BC-UNIFICATION|
+module, see Appendix~\ref{appendix:samples}.
+
+\section{Conclusion}\label{section:conclusion}
+
+Hello world.
 
 \newpage
 \appendix
@@ -682,40 +704,48 @@ It was written and tested in Maude 2.6 on a netbook running Gentoo GNU/Linux.
 Some sample sessions are provided in Appendix~\ref{appendix:samples}. All code
 is provided as-is.
 
-\subsection{The \lstinline|TOOLS| Module} \label{subappendix:tools-mod}
+\subsection{\lstinline|tools.maude|}
+\label{subappendix:tools-mod}
 \lstinputlisting[language=Maude, style=smalllisting]{tools.maude}
 \vspace{2em}
 
-\subsection{The \lstinline|APPLY| Module} \label{subappendix:apply-mod}
+\subsection{\lstinline|apply.maude|}
+\label{subappendix:apply-mod}
 \lstinputlisting[language=Maude, style=smalllisting]{apply.maude}
 \vspace{2em}
 
-\subsection{The \lstinline|INFERENCE| Module}\label{subappendix:inference-mod}
+\subsection{\lstinline|inference.maude|}
+\label{subappendix:inference-mod}
 \lstinputlisting[language=Maude, style=smalllisting]{inference.maude}
 \vspace{2em}
 
-\subsection{The \lstinline|GRAPH| and \lstinline|META-GRAPH| Modules}
+\subsection{\lstinline|graph.maude|}
 \label{subappendix:graph-mod}
 \lstinputlisting[language=Maude, style=smalllisting]{graph.maude}
 \vspace{2em}
 
-\subsection{The \lstinline|UNIFICAND-SET| Module}\label{subappendix:unificand-set-mod}
+\subsection{\lstinline|unificand-set.maude|}
+\label{subappendix:unificand-set-mod}
 \lstinputlisting[language=Maude, style=smalllisting]{unificand-set.maude}
 \vspace{2em}
 
-\subsection{The \lstinline|UNIFICATION-ALGORITHM| Theory}\label{subappendix:unif-alg-theory}
+\subsection{\lstinline|unification-algorithm.maude|}
+\label{subappendix:unif-alg-theory}
 \lstinputlisting[language=Maude, style=smalllisting]{unification-algorithm.maude}
 \vspace{2em}
 
-\subsection{The \lstinline|BC-UNIFICATION| Module}\label{subappendix:bc-unif-mod}
+\subsection{\lstinline|bc-unification.maude|}
+\label{subappendix:bc-unif-mod}
 \lstinputlisting[language=Maude, style=smalllisting]{bc-unification.maude}
 \vspace{2em}
 
-\subsection{The \lstinline|TEST-BC-UNIFICATION| Module}\label{subappendix:test-mod}
+\subsection{\lstinline|bc-test.maude|}
+\label{subappendix:test-mod}
 \lstinputlisting[language=Maude, style=smalllisting]{bc-test.maude}
 
 \newpage
 \section{Sample Sessions}\label{appendix:samples}
+
 In this appendix some examples will be given of interacting with this project.
 There are two main entry points: the \lstinline|BC-UNIFICATION| module, or the
 \lstinline|TEST-BC-UNIFICATION| module. The former contains the actual
@@ -744,9 +774,9 @@ err in favor of modularity.
 \label{subappendix:using-bc-unif-mod}
 
 The \lstinline|bc-unify| operation takes as arguments a
-\lstinline|UnificationProblem|, a meta-representation of a module, a signature,
-and two numbers, representing respectively the largest number of a new variable
-in the problem (e.g., \lstinline|'#6:Elt|) and the skip counter for the descent
+\lstinline|UnificationProblem|, a meta-representation of a view, and two
+numbers, representing respectively the largest number of a new variable in the
+problem (e.g., \lstinline|'#6:Elt|) and the skip counter for the descent
 function. Unfortunately, we cannot rewrite interactively in the
 \lstinline|BC-UNIFICATION| module, because it is parameterized. It is more
 correctly called \lstinline|BC-UNIFICATION{ALG :: UNIFICATION-ALGORITHM}|.
@@ -762,22 +792,13 @@ set of equations separated by \lstinline|/\| (slash-backslash or ``wedge'').
 Equations are given as a pair of terms separated by \lstinline|=?|
 (equals-question-mark).
 
-The module is any valid object of sort \lstinline|Module|. Most commonly, this
-is obtained by one of
+The view must be a meta-representation of an object-level view (i.e., it must
+be in the system). A view can be raised to the meta-level by use of the
+following operator:
 \begin{lstlisting}[language=Maude, style=smalllisting]
-    op upModule : [Qid] [Bool] -> [Module] [special (...)] .
-    op [_] : Qid -> Module [prec 0 gather (&)] .
+    op upView : [Qid] -> [View] [special (...)] .
 \end{lstlisting}
-The first returns a meta-representation of the module with the given name. The
-boolean indicates whether imported modules should be flattened into the
-meta-representation. The second returns a new module that protects the module
-with the given name. This generally has a smaller meta-representation than the
-module itself, so may save some memory.
-
-Finally, the signature is given as a whitespace-separated list of identifiers.
-The order is: $\Bc$, $\Hh$, $\Cons$, $\Nil$, $\Elt$, $\List$. Note that the
-identifier for $\Nil$ must be of sort \lstinline|Constant|, i.e., it must
-include the sort in its name (e.g., \lstinline|nil.List|).
+where the \lstinline|Qid| parameter is the name of the view.
 \vspace{1ex}
 
 \lstinputlisting[style=smalllisting]{bc-test-op-example.txt}
@@ -789,7 +810,7 @@ $\BC$-unification problems for testing. For example, there is an operator
     eq test-cancel-cons =
         bc-unify('U:List =? 'cons['V:Elt, 'W:List] /\
                  'U:List =? 'cons['X:Elt, 'Y:List],
-                 module, signature, 0, 0) .
+                 testView, 0, 0) .
 \end{lstlisting}
 To try this input, we simply \lstinline|reduce| the operator:
 \vspace{1ex}
@@ -803,7 +824,7 @@ The only non-constant test operation in \lstinline|TEST-BC-UNIFICATION| is
     eq test-nondet N =
         bc-unify('U:List =? 'bc['V:List, 'W:Elt] /\
                  'U:List =? 'bc['X:List, 'Y:Elt],
-                 module, signature, 0, N) .
+                 testView, 0, N) .
 \end{lstlisting}
 which tests the non-deterministic rules. The number is passed to
 \lstinline|bc-unify| as its skip parameter.
