@@ -39,80 +39,77 @@ fmod TEST-BC-UNIFICATION is
 
     vars N : Nat .
 
-    op signature : -> BCSignature .
-    eq signature = 'bc 'h 'cons 'nil.List 'Elt 'List .
-
-    op module : -> Module .
-    eq module = ['BC] .
+    op view : -> View .
+    eq view = upView('BcSignature) .
 
     op test-var-elim : -> UnificationPair? .
     eq test-var-elim =
         bc-unify('U:List =? 'V:List /\
                  'X:List =? 'cons['Y:Elt, 'U:List] /\
                  'Z:List =? 'bc['U:List, 'Y:Elt],
-                 module, signature, 0, 0) .
+                 view, 0, 0) .
 
     op test-cancel-cons : -> UnificationPair? .
     eq test-cancel-cons =
         bc-unify('U:List =? 'cons['V:Elt, 'W:List] /\
                  'U:List =? 'cons['X:Elt, 'Y:List],
-                 module, signature, 0, 0) .
+                 view, 0, 0) .
 
     op test-nil-soln-1 : -> UnificationPair? .
     eq test-nil-soln-1 =
         bc-unify('U:List =? 'bc['V:List, 'W:List] /\
                  'U:List =? 'nil.List,
-                 module, signature, 0, 0) .
+                 view, 0, 0) .
 
     op test-nil-soln-2 : -> UnificationPair? .
     eq test-nil-soln-2 =
         bc-unify('U:List =? 'bc['V:List, 'W:Elt] /\
                  'V:List =? 'nil.List,
-                 module, signature, 0, 0) .
+                 view, 0, 0) .
 
     op test-nil-cycle : -> UnificationPair? .
     eq test-nil-cycle =
         bc-unify('U:List =? 'bc['V:List, 'W:Elt] /\
                  'V:List =? 'bc['X:List, 'Y:Elt] /\
                  'X:List =? 'bc['U:List, 'Z:Elt],
-                 module, signature, 0, 0) .
+                 view, 0, 0) .
 
     op test-semi-cancel-bc : -> UnificationPair? .
     eq test-semi-cancel-bc =
         bc-unify('U:List =? 'bc['V:List, 'W:Elt] /\
                  'U:List =? 'bc['X:List, 'W:Elt],
-                 module, signature, 0, 0) .
+                 view, 0, 0) .
 
     op test-push-below : -> UnificationPair? .
     eq test-push-below =
         bc-unify('U:List =? 'bc['V:List, 'W:Elt] /\
                  'U:List =? 'bc['X:List, 'Y:Elt] /\
                  'U:List =? 'cons['U1:Elt, 'U2:List],
-                 module, signature, 0, 0) .
+                 view, 0, 0) .
 
     op test-splitting : -> UnificationPair? .
     eq test-splitting =
         bc-unify('U:List =? 'cons['V:Elt, 'W:List] /\
                  'U:List =? 'bc['X:List, 'Y:Elt],
-                 module, signature, 0, 0) .
+                 view, 0, 0) .
 
     op test-size-failure : -> UnificationPair? .
     eq test-size-failure =
         bc-unify('U:List =? 'cons['V:Elt, 'W:List] /\
                  'U:List =? 'nil.List,
-                 module, signature, 0, 0) .
+                 view, 0, 0) .
 
     op test-cycle-failure : -> UnificationPair? .
     eq test-cycle-failure =
         bc-unify('U:List =? 'bc['V:List, 'W:Elt] /\
                  'U:List =? 'bc['X:List, 'Y:Elt] /\
                  'V:List =? 'cons['Z:Elt, 'X:List],
-                 module, signature, 0, 0) .
+                 view, 0, 0) .
 
     op test-nondet_ : Nat -> UnificationPair? .
     eq test-nondet N =
         bc-unify('U:List =? 'bc['V:List, 'W:Elt] /\
                  'U:List =? 'bc['X:List, 'Y:Elt],
-                 module, signature, 0, N) .
+                 view, 0, N) .
 endfm
 

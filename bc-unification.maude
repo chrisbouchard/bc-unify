@@ -42,8 +42,8 @@ fth BC is
     --- disjoint.
     sorts Elt List .
 
-    op cons : Elt List -> List .
-    op nil : -> List .
+    op cons : Elt List -> List [ctor] .
+    op nil : -> List [ctor] .
     op bc : List Elt -> List .
     op h : Elt Elt -> Elt .
 
@@ -56,7 +56,20 @@ fth BC is
 endfth
 
 fmod BC-SIGNATURE is
+    sorts Elt List .
+
+    op cons : Elt List -> List [ctor] .
+    op nil : -> List [ctor] .
+    op bc : List Elt -> List [ctor] .
+    op h : Elt Elt -> Elt [ctor] .
+endfm
+
+view BcSignature from BC to BC-SIGNATURE is
+endv
+
+fmod BC-SHARED is
     protecting META-TERM .
+    protecting TOOLS .
     protecting UNIFICAND-SET .
     protecting STANDARD-FORM .
 
@@ -69,10 +82,28 @@ fmod BC-SIGNATURE is
     --- BC H CONS NIL ELT LIST
     ---
     op ______ : Qid Qid Qid Constant Type Type -> BCSignature [ctor] .
+    op noSignature : -> [BCSignature] .
 
     *** We'll declare this here because we'll need it in both
     *** BC-UNIFICATION and BC-INFERENCE.
     op bc-infer : StUnificandSet BCSignature Nat -> [UnificationPair?] .
+endfm
+
+fmod EXTRACT-SIGNATURE{XX :: BC} is
+    protecting BC-SHARED .
+
+    vars X : XX$Elt .
+    vars L : XX$List .
+
+    op $elt : -> XX$Elt [ctor] .
+
+    op getSignature : -> BCSignature .
+    eq getSignature = root(upTerm(bc(nil, $elt)))
+                      root(upTerm(h($elt, $elt)))
+                      root(upTerm(cons($elt, nil)))
+                      upTerm((nil).XX$List)
+                      getType(upTerm($elt))
+                      getType(upTerm((nil).XX$List)) .
 endfm
 
 *** This is the main module for this project. The bc-unify function
@@ -80,17 +111,20 @@ endfm
 ***
 fmod BC-UNIFICATION{ALG :: UNIFICATION-ALGORITHM} is
     protecting APPLY .
-    protecting BC-SIGNATURE .
+    protecting BC-SHARED .
     protecting INFERENCE .
-    protecting UNIFICAND-SET .
+    protecting META-LEVEL .
     protecting STANDARD-FORM .
+    protecting UNIFICAND-SET .
     protecting UNIFICATION-PAIR-UTILS .
 
     sorts UnificandSetPartition .
 
     op _;_ : UnificandSet UnificandSet -> UnificandSetPartition [ctor] .
 
+    vars VIEW : View .
     vars MOD : Module .
+    vars MODEX : ModuleExpression .
     vars N N' SKIP : Nat .
     vars SIG : BCSignature .
     vars PROB : UnificationProblem .
@@ -106,17 +140,34 @@ fmod BC-UNIFICATION{ALG :: UNIFICATION-ALGORITHM} is
     vars T : Term .
 
     *** This is the entry-point for BC unification.
-    op bc-unify : UnificationProblem Module BCSignature Nat Nat
-                  -> [UnificationPair?] .
-    ceq bc-unify(PROB, MOD, SIG, N, SKIP) =
-        next-phase(
-            downTerm(inferenceRules(upModule('BC-INFERENCE, false),
-                                    upTerm(bc-infer(EQ, SIG, N')),
-                                    upTerm((noUnifier).UnificationPair?),
-                                    SKIP),
-                     (noUnifier).UnificationPair?),
-            MOD)
-        if {EQ, N'} := decompose(MOD, problemToSet(PROB), N) .
+    op bc-unify : UnificationProblem View Nat Nat -> [UnificationPair?] .
+    ceq bc-unify(PROB, VIEW, N, SKIP) = next-phase(
+        downTerm(inferenceRules(upModule('BC-INFERENCE, false),
+                                upTerm(bc-infer(EQ, SIG, N')),
+                                upTerm((noUnifier).UnificationPair?),
+                                SKIP),
+                    (noUnifier).UnificationPair?),
+        MOD)
+        if SIG := metaGetSignature(VIEW)
+        /\ MOD := protect(getTo(VIEW))
+        /\ {EQ, N'} := decompose(MOD, problemToSet(PROB), N) .
+
+    op metaGetSignature : View -> [BCSignature] .
+    eq metaGetSignature(VIEW) = downTerm(getTerm(
+        metaReduce(fmod 'META-EXTRACT is
+                       protecting 'EXTRACT-SIGNATURE{getName(VIEW)} .
+                       sorts none .
+                       none none none none
+                   endfm, 'getSignature.BCSignature)),
+        noSignature) .
+
+    op protect : ModuleExpression -> Module .
+    ceq [MODEX] = (th 'TEMP is
+                       including MODEX .
+                       sorts none .
+                       none none none none none
+                   endth)
+        if not (MODEX :: Qid) .
 
     op next-phase : [UnificationPair?] Module -> [UnificationPair?] .
     eq next-phase(PAIR, MOD) = PAIR .
@@ -252,7 +303,7 @@ endfm
 ***
 mod BC-INFERENCE is
     protecting BC-GRAPH .
-    protecting BC-SIGNATURE .
+    protecting BC-SHARED .
     protecting UNIFICAND-SET .
 
     vars N : Nat .
