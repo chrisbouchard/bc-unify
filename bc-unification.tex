@@ -159,12 +159,13 @@
 \begin{quotation}
 Equational unification is an important research area with many applications,
 such as cryptographic protocol analysis, automated theorem proving, and
-automated reasoning. In ``Unification modulo Chaining'', the authors present an
-algorithm for solving unification problems modulo a theory of chaining. The
-algorithm is modular in the sense that it does not depend on the interpretation
-of the elements in the lists, but is instead parameterized by a suitable
-element unification algorithm. We present an implementation of this algorithm
-in the Maude programming language.
+automated reasoning. In ``Unification modulo
+Chaining''~\cite{anantharaman2012unification}, the an algorithm is presented
+for solving unification problems modulo a theory of chaining. The algorithm is
+modular in the sense that it does not depend on the interpretation of the
+elements in the lists, but is instead parameterized by a suitable element
+unification algorithm. We present an implementation of this algorithm in the
+Maude programming language.
 
 \medskip{}
 \textit{Keywords:} Cypher block chaining, Equational unification, Maude, Protocol
@@ -189,8 +190,8 @@ Erbatur, for taking the time to mentor and encourage a first year grad student.
 I now \emph{ful{}ly} understand how busy they must have been.
 I would also like to thank my friends and teammates, Kim Gero, Peter Hibbs, and
 Andrew ``Basil'' Matusiewicz, for making this department a place that I look
-forward to going every day. This journey would have been much more arduous
-without their camaraderie.
+forward to going to. This journey would have been much more arduous without
+their camaraderie.
 
 I would like to thank my parents for their continued support.
 And I would like to thank my girlfriend, Mary Ferro, for more than I can say.
@@ -208,20 +209,30 @@ you.
 \section{Introduction}\label{section:intro}
 
 Equational unification is an important research area with many applications in
-cryptographic protocol analysis, automated theorem proving, and automated
-reasoning. One such application in protocol analysis is the study of a
-technique called \emph{cipher block chaining} in which one encrypts blocks of a
-message by masking the current block with the previous encrypted block, then
-applying the encryption function to the result. This forces an attacker to
-decrypt all previous blocks before decrypting a later block, preventing him or
-her from attacking individual blocks in parallel.
+cryptographic protocol analysis and automated reasoning. One such application
+in protocol analysis is the study of a technique called \emph{cipher block
+chaining} used in the SSL and TLS cryptographic protocols~\cite{rfc5246}. In
+cipher block chaining, one encrypts blocks of a message by masking the current
+block with the previous encrypted block, then applying the encryption function
+to the result. This forces an attacker to decrypt all previous blocks before
+decrypting a later block, preventing him or her from attacking individual
+blocks in parallel.
+
+Formally, if a message's plaintext contains blocks $M_1, \dotsc, M_n$, then
+the cyphertext will contain blocks $C_1, \dotsc, C_n$ such that:
+\begin{align*}
+    C_1 &= e_k(M_1 \oplus IV) &
+    C_i &= e_k(M_i \oplus C_{i-1})
+\end{align*}
+where $e_k$ represents encryption with a key $k$, $\oplus$ represents XOR, and
+$IV$ represents an \emph{initialization vector} --- a random initial input.
 
 In ``Unification modulo Chaining'', the authors present an algorithm for
 solving unification problems modulo a general theory of \emph{chaining}, then
 show how this can be used to solve problems modulo cipher block chaining in
 particular~\cite{anantharaman2012unification}. The notion of chaining
-corresponds performing a right fold of a list, but keeping the partial results.
-In ML, such a function might look like:
+corresponds to performing a \emph{right fold} of a list, but keeping the
+partial results.  In ML, such a function might look like:
 \begin{lstlisting}[language=ML, style=smalllisting]
     fun chain f z [] = []
       | chain f z (x::ls) = f (z,x) :: chain f (f (z,x)) ls;
@@ -672,6 +683,9 @@ problems modulo a related theory with a ``de-chaining'' operator, which could
 model cypher block chaining with a list-level decryption operator. Implementing
 this algorithm should only require an extended set of inference rules and a
 more complicated list dependency graph.
+
+%TODO: Write something about this reference.
+Attack on CBC~\cite{ekr2011security}.
 
 \bibliography{bc-unification}
 
