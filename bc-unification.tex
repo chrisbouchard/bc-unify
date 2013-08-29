@@ -1,5 +1,6 @@
 \documentclass[11pt]{article}
 
+\usepackage[T1]{fontenc}
 \usepackage{lmodern}
 \usepackage{epsfig}
 \usepackage{amssymb, amsmath, amsthm, amsxtra}
@@ -17,7 +18,8 @@
 \usepackage{multicol}
 \usepackage{listings}
 \usepackage{fancybox}
-\usepackage{hyperref}
+\usepackage[bookmarks]{hyperref}
+\usepackage{bookmark}
 
 \newcommand{\ueq}{=_{}^?}
 \newcommand{\compcirc}{\, {\scriptstyle{\circ}} \,}
@@ -56,11 +58,9 @@
 \newcommand{\Reduced}[1]{#1 \negmedspace\downarrow}
 \newcommand{\Sub}[2]{{\left.{#1}\right|_{#2}^{}}}
 
-\DeclareFontFamily{T1}{lmtt}{} 
-\DeclareFontShape{T1}{lmtt}{m}{n}{<-> ec-lmtl10}{} 
-\DeclareFontShape{T1}{lmtt}{m}{\itdefault}{<-> ec-lmtlo10}{} 
-\DeclareFontShape{T1}{lmtt}{\bfdefault}{n}{<-> ec-lmtk10}{} 
-\DeclareFontShape{T1}{lmtt}{\bfdefault}{\itdefault}{<-> ec-lmtko10}{} 
+\newcommand{\TitleListing}[1]{\texorpdfstring{\lstinline|#1|}{#1}}
+
+\bibliographystyle{plain}
 
 % Default to setting ML in listings
 \lstset{
@@ -113,7 +113,9 @@
 \pagenumbering{roman}
 
 \begin{document}
+
 \begin{titlepage}
+    \pdfbookmark{Implementing Unification modulo Chaining}{Title Page}
     {\vspace*{-1in}\hspace*{-.5in}
     \parbox{7.25in}{
     \setlength{\baselineskip}{13pt}
@@ -133,9 +135,10 @@
     \vspace*{2in}
 
     \begin{center}
-    \textbf{\huge Implementing Unification modulo Chaining} \\[+15pt]
-    \textbf{(Master's Project)}
-    \par\end{center}
+        \textbf{\huge Implementing Unification modulo Chaining} \\[+15pt]
+        \textbf{(Master's Project)}
+        \par
+    \end{center}
 
     \vspace{2in}
 
@@ -164,11 +167,11 @@ element unification algorithm. We present an implementation of this algorithm
 in the Maude programming language.
 
 \medskip{}
-\textit{Keywords:} Block chaining, Equational unification, Protocol analysis,
-Term rewriting, Undecidability.
+\textit{Keywords:} Cypher block chaining, Equational unification, Maude, Protocol
+analysis, Term rewriting.
 \end{quotation}
 
-\newpage
+\clearpage
 
 \begin{center}
     \textbf{Acknowledgements}
@@ -183,7 +186,7 @@ and expertise while I learned the ropes of academic writing.
 
 I would like to thank my academic older brothers, Andrew Marshall and Serdar
 Erbatur, for taking the time to mentor and encourage a first year grad student.
-I now \emph{fully} understand how busy they must have been.
+I now \emph{ful{}ly} understand how busy they must have been.
 I would also like to thank my friends and teammates, Kim Gero, Peter Hibbs, and
 Andrew ``Basil'' Matusiewicz, for making this department a place that I look
 forward to going every day. This journey would have been much more arduous
@@ -196,11 +199,10 @@ love and belief in me when I had lost my confidence have kept me going. Thank
 you.
 \end{quotation}
 
-\newpage
-
+\cleardoublepage
 \tableofcontents
 
-\newpage
+\clearpage
 \pagenumbering{arabic}
 
 \section{Introduction}\label{section:intro}
@@ -208,17 +210,18 @@ you.
 Equational unification is an important research area with many applications in
 cryptographic protocol analysis, automated theorem proving, and automated
 reasoning. One such application in protocol analysis is the study of a
-technique called \emph{block chaining} in which one encrypts blocks of a
+technique called \emph{cipher block chaining} in which one encrypts blocks of a
 message by masking the current block with the previous encrypted block, then
 applying the encryption function to the result. This forces an attacker to
-decrypt all previous blocks before decripting a later block, preventing him or
+decrypt all previous blocks before decrypting a later block, preventing him or
 her from attacking individual blocks in parallel.
 
 In ``Unification modulo Chaining'', the authors present an algorithm for
 solving unification problems modulo a general theory of \emph{chaining}, then
-show how this can be used to solve problems modulo block chaining in specific.
-The notion of chaining corresponds performing a right fold of a list, but
-keeping the partial results. In ML, such a function might look like:
+show how this can be used to solve problems modulo cipher block chaining in
+particular~\cite{anantharaman2012unification}. The notion of chaining
+corresponds performing a right fold of a list, but keeping the partial results.
+In ML, such a function might look like:
 \begin{lstlisting}[language=ML, style=smalllisting]
     fun chain f z [] = []
       | chain f z (x::ls) = f (z,x) :: chain f (f (z,x)) ls;
@@ -237,25 +240,52 @@ function.
 One of the motivations behind this implementation is a tool called The
 Maude-NPA\footnote{Maude-NPA: \url{http://maude.cs.uiuc.edu/tools/Maude-NPA/}},
 developed at the Naval Research Lab. Maude-NPA uses term-rewriting and
-algebraic properties to analyze cryptographic protocols at a symbolic level.
-The Maude-NPA project needs implementations of unification algorithms for as
-many different cryptographic functions and protocols as possible. The fact that
-Maude-NPA is written in Maude\footnote{The Maude System:
-\url{http://maude.cs.uiuc.edu/}}, combined with Maude's excellent reflective
-and rewriting capabilities, made the language a good choice for our
-implementation.
+algebraic properties to analyze cryptographic protocols at a symbolic
+level~\cite{escobar2009maude}.  The Maude-NPA project incorporates
+implementations of unification algorithms for a range of cryptographic
+operations and protocols. The fact that Maude-NPA is written in
+Maude\footnote{The Maude System: \url{http://maude.cs.uiuc.edu/}}, combined
+with Maude's excellent reflective and rewriting capabilities, made the language
+a prime candidate for our implementation.
 
 \section{Notation and Preliminaries}\label{section:notation}
 
 We consider rewrite systems over ranked signatures, usually denoted $\Sigma$,
 and a possibly infinite set of variables, usually denoted $\X$. We assume the
 reader is familiar with the usual notions and concepts in term rewriting
-systems~\cite{Term} and equational unification~\cite{BaaderSnyd-01}.  An
-\emph{equation}, e.g. in \cite{Term} is an ordered pair of terms $(s, \, t)$,
-usually written as $s \approx t$. Here $s$~is the \emph{left-hand side} and
-$t$~is the \emph{right-hand side} of the equation~\cite{Term}. A \emph{rewrite
-rule} is an equation $s \approx t$ where $\Var(s) \supseteq \Var(t)$, usually
-written as~$s \to t$. A \emph{term rewriting system} is a set of rewrite rules.
+systems and equational unification~\cite{Term, BaaderSnyd-01}. An
+\emph{equation} is an ordered pair of terms $(s, \, t)$, usually written as $s
+\approx t$. Here $s$~is the \emph{le\vspace{-0.2pt}ft-hand side} and $t$~is the
+\emph{right-hand side} of the equation. A \emph{theory} is a set of equations,
+also referred to as \emph{axioms}. A \emph{rewrite rule} is an equation $s
+\approx t$ where $\Var(s) \supseteq \Var(t)$, usually written as~$s \to t$. A
+\emph{term rewriting system} is a set of rewrite rules.
+
+\subsection{Unification}\label{subsection:unification}
+
+Unification is the problem of solving equations with respect to a particular
+theory. Given a theory $E$, an instance of the \emph{unification problem modulo
+$E$} is a set of equations $\p = \{s_1 \ueq t_1, \dotsc, s_n \ueq t_n\}$. (The
+symbol $\ueq$ rather than $\approx$ is customary to indicate that these are
+equations to be solved rather than axioms.) A solution is a substitution
+$\sigma$ such that $\sigma(s_1) \approx^{}_E \sigma(t_1) \, \wedge \, \dotsb \,
+\wedge \, \sigma(s_n) \approx^{}_E \sigma(t_n)$. Such a solution is also called
+an \emph{$E$-unifier} of $\p$, or simply a unifier if the theory is clear from
+the context.
+
+A set of equations $\p = \{x_1 \ueq t_1, \dotsc x_n \ueq t_n\}$ is said to be
+in \emph{dag-solved form} if all of the following conditions
+hold~\cite{jouannaud1991solving}:
+\begin{enumerate}[(i)]
+    \item Each $x_i$ is a variable.
+    \item Each $x_i$ is unique, i.e., $x_i = x_j$ iff $i = j$.
+    \item If $i < j$, then $x_i$ does not occur in $t_j$.
+\end{enumerate}
+It is this last condition that gives dag-solved form its name, because the
+equations can be thought to form a directed acyclic graph. A set of equations
+in dag solved form has the following unifier:
+\[\sigma = (x_n \mapsto t_n) \compcirc \dotsb \compcirc (x_1 \mapsto t_1)\]
+where $\compcirc$ is function composition.
 
 \subsection{Many-Sorted Signature}\label{subsection:signature}
 
@@ -293,7 +323,8 @@ $\p'$ in standard form such that unifiability is preserved and any unifier of
 $\p'$ is a unifier of $\p$. Doing so need only introduce a number of new variables
 linear in the size of the input problem.
 
-\section{The Theory of Chaining ($\BC$)}\label{section:theory}
+\section{The Theory of Chaining (\texorpdfstring{$\BC$}{BC})}
+\label{section:theory}
 
 The theory of chaining, $\BC$ (for ``block chaining''), is given by the
 following two axioms:
@@ -309,10 +340,10 @@ constructors.
 
 When oriented from left to right into a rewrite system, $\BC$ is convergent.
 In ``Unification modulo Chaining'', it was shown that unification modulo $\BC$
-is finitary, but not unitary. The rewrite system is clearly subterm-collapsing
-due to the first axiom.
+is finitary, but not unitary.
 
-\subsection{The Element Theory ($\HH$)}\label{subsection:element-theory}
+\subsection{The Element Theory (\texorpdfstring{$\HH$}{H})}
+\label{subsection:element-theory}
 
 Since chaining is a higher-order operation, we consider a fixed function $\Hh$.
 We assume there is a theory $\HH$ that interprets $\Hh$, which we call the
@@ -321,18 +352,18 @@ $\Hh$ should be semi-cancellative. A function symbol is semi-cancellative iff
 it has the property that:
 \[ \Hh(t_1, s_1) \approx_\HH^{} \Hh(t_2, s_2) \quad \Rightarrow \quad
 t_1 \approx_\HH^{} t_2 \; \Leftrightarrow \; s_1 \approx_\HH^{} s_2 \]
-for any terms $t_1, s_1, t_2, s_2$.
+for all terms $t_1, s_1, t_2, s_2$.
 
 Two element theories were considered in ``Unification modulo Chaining'': one in
 which $\Hh$ is left uninterpreted, and another in which $\Hh$ is interpreted by
 $\Hh(x, y) = e_k(x \oplus y)$, where $\oplus$ is XOR and $e_k$ is an
 uninterpreted function symbol representing encryption with a fixed key $k$.
 Note that this latter interpretation, combined with $\BC$, is exactly the
-definition of block chaining.
+definition of cipher block chaining.
 
 \section{Algorithm for Unification modulo Chaining}\label{section:algorithm}
 
-The algorithm in ``Uniication modulo Chaining'' is divided into two phases.
+The algorithm in ``Unification modulo Chaining'' is divided into two phases.
 The first phase is given by a system of inference rules that transform the
 set of list equations into dag-solved form by breaking \emph{peaks} (variables
 equated to two different terms). The second phase uses a provided
@@ -350,8 +381,19 @@ inference rule from the algorithm looks like:
 \]
 The premise (top) is matched against the current set of equations. If
 the match is successful, the set of equations is replaced by the conclusion
-(bottom), instantiated by the match. The full set of inference rules for the
-algorithm is given in Appendix~\ref{appendix:inference}.
+(bottom), instantiated by the match. For example, with the above rule and
+the set of equations $\{ X \ueq cons(y_1, Z_1), \; X \ueq cons(y_2, Z_2) \}$,
+we can derive the set of equations $\{ X \ueq cons(y_1, Z_1), \; y_2 \ueq y_1,
+\; Z_2 \ueq Z_1 \}$. We could also derive the set of equations $\{ X \ueq
+cons(y_2, Z_2), \; y_1 \ueq y_2, \; Z_1 \ueq Z_2 \}$, since the order of the
+elements in the initial set is not fixed.
+
+This is one example of the nondeterminism that can arise in the algorithm.
+This particular inference rule is classified as ``don't care'' in the system,
+which means the algorithm is free to choose either conclusion. Some inference
+rules are classified ``don't know'' and require branching. Fore more information
+about ``don't care'' and ``don't know'' rules, as well as the full set of inference
+rules, see Appendix~\ref{appendix:inference}.
 
 \subsection{Dependency Graph}\label{subsection:graph}
 
@@ -364,7 +406,7 @@ whose edges are given as follows:
         edge from $U$ to $W$ labelled $>_{\Cons}$.
     \item For each equation $U \ueq \Bc(V, w)$ in $\EQ$, there is a directed
         edge from $U$ to $V$ labelled $>_{\Bc}$ and an \emph{undirected} edge
-        from $U$ to $V$ labelled $\sim_{\Bc}$.
+        between $U$ and $V$ labelled $\sim_{\Bc}$.
 \end{enumerate}
 We define the following two binary relations on $\X_L$ using the list dependency
 graph $G_L(\EQ)$:
@@ -378,7 +420,8 @@ graph $G_L(\EQ)$:
 Since two list variables connected by $\sim_{\Bc}$ must be assigned lists with
 the same length by any unifier, $\succ_L$ can be interpreted as ``longer than''.
 
-\subsection{The $\Nonnil$ Set}\label{subsection:nonnil}
+\subsection{The \texorpdfstring{$\Nonnil$}{nonnil} Set}
+\label{subsection:nonnil}
 
 The last data structure use by the algorithm is a set $\Nonnil \subseteq \X_L$
 of variables that \emph{must not} be set to $\Nil$ in any unifier of $\EQ$. The
@@ -400,6 +443,9 @@ an attractive target for applications related to term-rewriting, because
 implementors can turn Maude's powerful unification and rewriting capabilities
 back on terms at the meta-level.
 
+We assume the reader is familiar with Maude, including meta-level
+programming~\cite{clavel2011maude}. (It could be argued that one cannot be
+familiar with Maude \emph{unless} one is familiar with meta-level programming.)
 Maude programs are built around \emph{modules}, which correspond to rewrite
 systems in term-rewriting. Modules contain definitions of sorts, subsort
 relationships, operators, sort membership axioms, equations, and rules.
@@ -411,7 +457,7 @@ libraries rather than one-off solutions. To this end, there are a few big
 modules that deserve their own description. The full source code for this
 project is given in Appendix~\ref{appendix:implementation}.
 
-\subsection{The \lstinline|INFERENCE| Module}\label{subsection:inference-mod}
+\subsection{The \TitleListing{INFERENCE} Module}\label{subsection:inference-mod}
 
 Maude's notion of a rule corresponds nicely with the inference rules described
 previously. The main difference is that, while inference rules are applied
@@ -474,7 +520,7 @@ specifies which solution is desired. Note that \lstinline|inferenceRules| is a
 partial function (its range is a kind); the operation is undefined if, for
 example, the module argument does not represent a valid module.
 
-\subsection{The \lstinline|GRAPH| and \lstinline|META-GRAPH| Modules}
+\subsection{The \TitleListing{GRAPH} and \TitleListing{META-GRAPH} Modules}
 \label{subsection:graph-mod}
 
 In order to implement the list dependency graph and cycle-checking, we need an
@@ -496,7 +542,7 @@ the \lstinline|EDGE| theory defines three destructor operations:
 \end{lstlisting}
 
 The first two are relations that detect if the edge is to or from the given
-node, respectively. The second evaluates to a set containing \emph{all} nodes
+node, respectively. The second evaluates to a set containing \emph{al{}l} nodes
 in the edge, regardless of whether it is to or from a particular node.  The
 module \lstinline|GRAPH{E :: EDGE}| then defines graphs and paths in terms of
 edges and nodes.
@@ -540,7 +586,7 @@ graphs related to paths and cycles:
     op findNePath : E$Node E$Node Graph{E} Nat -> Path?{E} .
     op hasCycle : Graph{E} -> Bool .
 \end{lstlisting}
-The first two search for paths in the a graph from the first node to the second.
+The first two search for paths in the graph from the first node to the second.
 These operations are descent functions, so they take as their last argument the
 number of solutions to skip. The third operation checks if the given graph has
 a cycle --- i.e., a non-empty path from a node back to itself.
@@ -560,10 +606,21 @@ resulting term will be rewritten at the meta-level in the given module. If the
 result is \lstinline|true|, then the path is a solution. Otherwise it is
 discarded.
 
-\subsection{The \lstinline|BC-UNIFICATION| Module}\label{subsection:bc-unif-mod}
+\subsection{The \TitleListing{UNIFICATION-ALGORITHM} Theory}
+\label{subsection:unif-alg-mod}
+
+We provide a theory, \lstinline|UNIFICATION-ALGORITHM|, which formalizes the
+interface we expect for the unification algorithm for the element theory. The
+operator \lstinline|unify-alg| has the same signature as \lstinline|metaUnify|
+from the \lstinline|META-LEVEL| module, and in fact there is a view
+\lstinline|MetaUnifyAlg| from \lstinline|META-LEVEL| to
+\lstinline|UNIFICATION-ALGORITHM| with exactly that mapping.
+
+\subsection{The \TitleListing{BC-UNIFICATION} Module}
+\label{subsection:bc-unif-mod}
 
 This module is the heart of the project. It uses the \lstinline|inferenceRules|
-stragtegy from \lstinline|INFERENCE| to apply the inference rules implemented
+strategy from \lstinline|INFERENCE| to apply the inference rules implemented
 in \lstinline|BC-INFERENCE|. The unification operator is called
 \lstinline|bc-unify|, which takes as arguments a
 \lstinline|UnificationProblem|, a meta-representation of a view from
@@ -581,23 +638,59 @@ From the view, we extract a signature, which contains the names of the symbols
 for $\Bc$, $\Hh$, $\Cons$, $\Nil$, $\Elt$, and $\List$. A module
 \lstinline|BC-SIGNATURE| is provided with the default names for these symbols, as
 well as a view \lstinline|BcSignature| from \lstinline|BC| to
-\lstinline|BC-SIGNATURE|.
+\lstinline|BC-SIGNATURE|. The view is also used to find the module in which
+the second phase of our algorithm --- solving the element equations --- will be
+performed. The ``to'' module of the view will be passed to the unification
+algorithm for the element theory.
 
 For examples of using \lstinline|bc-unify| and the \lstinline|BC-UNIFICATION|
 module, see Appendix~\ref{appendix:samples}.
 
 \section{Conclusion}\label{section:conclusion}
 
-Hello world.
+We have explored an algorithm for solving unification problems modulo a theory
+of chaining, where the theory $\BC$ is combined with an element theory $\HH$.
+The algorithm first solves the list equations by transforming them into a
+solved form, then uses a provided unification algorithm to solve the element
+equations. We provided an implementation of this algorithm in the Maude
+programming language. More information about the algorithm and its
+implementation are provided in the appendices.
 
-\newpage
+There are several opportunities for future work on this project. The descent
+functions, e.g., for path-finding, recompute skipped solutions (i.e., they
+start from scratch each time). There is an opportunity for a speed-up by
+memoizing their results, but the code as written will not benefit from
+memoization. They could be rewritten if this speed-up is desired.
+
+Also, currently the list dependency graph and $\Nonnil$ set are re-computed
+each time they are needed. The \lstinline|bc-infer| operation in the
+\lstinline|BC-INFERENCE| module could be extended to keep these data structures
+as it runs, allowing them to be updated rather than recomputed.
+
+Finally, an extended algorithm has been developed for solving unification
+problems modulo a related theory with a ``de-chaining'' operator, which could
+model cypher block chaining with a list-level decryption operator. Implementing
+this algorithm should only require an extended set of inference rules and a
+more complicated list dependency graph.
+
+\bibliography{bc-unification}
+
+\clearpage
 \appendix
 
 \section{Inference Rules}\label{appendix:inference}
 
 Here is the complete system of inference rules for transforming a set of list
-equations into dag-solved form. The following rules are ``don't care''
-nondeterministic.
+equations into dag-solved form. The rules come in two types: ``don't
+care''-nondeterministic and ``don't know''-nondeterministic. The difference
+is that when more than one ``don't care'' rule is applicable to the same
+set of equations, a rule may be picked arbitrarily. When more than one ``don't
+know'' rule is applicable, any could be applied. The algorithm must branch at
+this point.
+
+\subsection{\texorpdfstring{``Don't Care''}{"Don't Care"}-Nondeterministic Rules}
+
+The following rules are ``don't care''-nondeterministic.
 \begin{description}
     \item[(L1)] {\em Variable Elimination}:
         \[\infer[\quad \text{if } U \text{ occurs in } \EQ ]
@@ -668,6 +761,8 @@ nondeterministic.
         \]
 \end{description}
 
+\subsection{\texorpdfstring{``Don't Know''}{"Don't Know"}-Nondeterministic Rules}
+
 The remaining rules are ``don't know'' nondeterministic. Different orders of
 application will lead to different unifiers. A complete set of unifiers can
 be obtained by trying all branches.
@@ -702,44 +797,45 @@ be obtained by trying all branches.
 This appendix contains the \emph{complete} Maude code of this implementation.
 It was written and tested in Maude 2.6 on a netbook running Gentoo GNU/Linux.
 Some sample sessions are provided in Appendix~\ref{appendix:samples}. All code
-is provided as-is.
+is provided as-is. The newest version of this code is available on GitHub at
+\url{https://github.com/chrisbouchard/bc-unify/}.
 
-\subsection{\lstinline|tools.maude|}
+\subsection{\TitleListing{tools.maude}}
 \label{subappendix:tools-mod}
 \lstinputlisting[language=Maude, style=smalllisting]{tools.maude}
 \vspace{2em}
 
-\subsection{\lstinline|apply.maude|}
+\subsection{\TitleListing{apply.maude}}
 \label{subappendix:apply-mod}
 \lstinputlisting[language=Maude, style=smalllisting]{apply.maude}
 \vspace{2em}
 
-\subsection{\lstinline|inference.maude|}
+\subsection{\TitleListing{inference.maude}}
 \label{subappendix:inference-mod}
 \lstinputlisting[language=Maude, style=smalllisting]{inference.maude}
 \vspace{2em}
 
-\subsection{\lstinline|graph.maude|}
+\subsection{\TitleListing{graph.maude}}
 \label{subappendix:graph-mod}
 \lstinputlisting[language=Maude, style=smalllisting]{graph.maude}
 \vspace{2em}
 
-\subsection{\lstinline|unificand-set.maude|}
+\subsection{\TitleListing{unificand-set.maude}}
 \label{subappendix:unificand-set-mod}
 \lstinputlisting[language=Maude, style=smalllisting]{unificand-set.maude}
 \vspace{2em}
 
-\subsection{\lstinline|unification-algorithm.maude|}
+\subsection{\TitleListing{unification-algorithm.maude}}
 \label{subappendix:unif-alg-theory}
 \lstinputlisting[language=Maude, style=smalllisting]{unification-algorithm.maude}
 \vspace{2em}
 
-\subsection{\lstinline|bc-unification.maude|}
+\subsection{\TitleListing{bc-unification.maude}}
 \label{subappendix:bc-unif-mod}
 \lstinputlisting[language=Maude, style=smalllisting]{bc-unification.maude}
 \vspace{2em}
 
-\subsection{\lstinline|bc-test.maude|}
+\subsection{\TitleListing{bc-test.maude}}
 \label{subappendix:test-mod}
 \lstinputlisting[language=Maude, style=smalllisting]{bc-test.maude}
 
@@ -770,7 +866,7 @@ err in favor of modularity.
 
 \lstinputlisting[style=smalllisting]{load-bc-unify.txt}
 
-\subsection{Using \lstinline|BC-UNIFICATION| and \lstinline|bc-unify|}
+\subsection{Using \TitleListing{BC-UNIFICATION} and \TitleListing{bc-unify}}
 \label{subappendix:using-bc-unif-mod}
 
 The \lstinline|bc-unify| operation takes as arguments a
@@ -781,7 +877,7 @@ function. Unfortunately, we cannot rewrite interactively in the
 \lstinline|BC-UNIFICATION| module, because it is parameterized. It is more
 correctly called \lstinline|BC-UNIFICATION{ALG :: UNIFICATION-ALGORITHM}|.
 
-\subsection{Using \lstinline|TEST-BC-UNIFICATION|}
+\subsection{Using \TitleListing{TEST-BC-UNIFICATION}}
 \label{subappendix:using-bc-test-mod}
 
 For interactive testing, the \lstinline|TEST-BC-UNIFICATION| module provides a
