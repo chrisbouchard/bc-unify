@@ -224,8 +224,9 @@ the cyphertext will contain blocks $C_1, \dotsc, C_n$ such that:
     C_1 &= e_k(M_1 \oplus IV) &
     C_i &= e_k(M_i \oplus C_{i-1})
 \end{align*}
-where $e_k$ represents encryption with a key $k$, $\oplus$ represents XOR, and
-$IV$ represents an \emph{initialization vector} --- a random initial input.
+where $e_k$ represents block-level encryption with a key $k$, $\oplus$
+represents XOR, and $IV$ represents an \emph{initialization vector} --- a
+random initial input.
 
 In ``Unification modulo Chaining'', the authors present an algorithm for
 solving unification problems modulo a general theory of \emph{chaining}, then
@@ -668,8 +669,8 @@ programming language. More information about the algorithm and its
 implementation are provided in the appendices.
 
 There are several opportunities for future work on this project. The descent
-functions, e.g., for path-finding, recompute skipped solutions (i.e., they
-start from scratch each time). There is an opportunity for a speed-up by
+functions, e.g., for path-finding, currently recompute skipped solutions (i.e.,
+they start from scratch each time). There is an opportunity for a speed-up by
 memoizing their results, but the code as written will not benefit from
 memoization. They could be rewritten if this speed-up is desired.
 
@@ -684,8 +685,13 @@ model cypher block chaining with a list-level decryption operator. Implementing
 this algorithm should only require an extended set of inference rules and a
 more complicated list dependency graph.
 
-%TODO: Write something about this reference.
-Attack on CBC~\cite{ekr2011security}.
+Currenty there is at least one attack on cypher block chaining in the wild.
+The ``BEAST'' attack on TLS from 2011 abuses the fact that TLS 1.0 allows
+implementations to use the last encrypted block of a record as the
+initialization vector of the next, rather than generating a new initialization
+vector for each record~\cite{ekr2011security}. It is our hope that,
+through symbolic protocol analysis, we will uncover more attacks like this in
+an automated way.
 
 \bibliography{bc-unification}
 
