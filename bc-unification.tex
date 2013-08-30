@@ -219,8 +219,8 @@ to the result. This forces an attacker to decrypt all previous blocks before
 decrypting a later block, preventing him or her from attacking individual
 blocks in parallel.
 
-Formally, if a message's plaintext contains blocks $M_1, \dotsc, M_n$, then
-the cyphertext will contain blocks $C_1, \dotsc, C_n$ such that:
+Formally, if a message's plaintext contains blocks $[M_1, \dotsc, M_n]$, then
+the cyphertext will contain blocks $[C_1, \dotsc, C_n]$ such that:
 \begin{align*}
     C_1 &= e_k(M_1 \oplus IV) &
     C_i &= e_k(M_i \oplus C_{i-1})
@@ -835,50 +835,50 @@ be obtained by trying all branches.
 
 This appendix contains the \emph{complete} Maude code of this implementation.
 It was written and tested in Maude 2.6 on a netbook running Gentoo GNU/Linux.
-Some sample sessions are provided in Appendix~\ref{appendix:samples}. All code
-is provided as-is. The newest version of this code is available on GitHub at
+Some sample sessions are provided in Appendix~\ref{appendix:samples}. The
+newest version of this report and code is available on GitHub at
 \url{https://github.com/chrisbouchard/bc-unify/}.
 
 \subsection{\TitleListing{tools.maude}}
 \label{subappendix:tools-mod}
 \lstinputlisting[language=Maude, style=smalllisting]{tools.maude}
-\vspace{2em}
+\clearpage
 
 \subsection{\TitleListing{apply.maude}}
 \label{subappendix:apply-mod}
 \lstinputlisting[language=Maude, style=smalllisting]{apply.maude}
-\vspace{2em}
+\clearpage
 
 \subsection{\TitleListing{inference.maude}}
 \label{subappendix:inference-mod}
 \lstinputlisting[language=Maude, style=smalllisting]{inference.maude}
-\vspace{2em}
+\clearpage
 
 \subsection{\TitleListing{graph.maude}}
 \label{subappendix:graph-mod}
 \lstinputlisting[language=Maude, style=smalllisting]{graph.maude}
-\vspace{2em}
+\clearpage
 
 \subsection{\TitleListing{unificand-set.maude}}
 \label{subappendix:unificand-set-mod}
 \lstinputlisting[language=Maude, style=smalllisting]{unificand-set.maude}
-\vspace{2em}
+\clearpage
 
 \subsection{\TitleListing{unification-algorithm.maude}}
 \label{subappendix:unif-alg-theory}
 \lstinputlisting[language=Maude, style=smalllisting]{unification-algorithm.maude}
-\vspace{2em}
+\clearpage
 
 \subsection{\TitleListing{bc-unification.maude}}
 \label{subappendix:bc-unif-mod}
 \lstinputlisting[language=Maude, style=smalllisting]{bc-unification.maude}
-\vspace{2em}
+\clearpage
 
 \subsection{\TitleListing{bc-test.maude}}
 \label{subappendix:test-mod}
 \lstinputlisting[language=Maude, style=smalllisting]{bc-test.maude}
 
-\newpage
+\clearpage
 \section{Sample Sessions}\label{appendix:samples}
 
 In this appendix some examples will be given of interacting with this project.
