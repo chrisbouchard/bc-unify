@@ -14,7 +14,7 @@
 \usepackage{authblk}
 \usepackage{url}
 \usepackage[sectionbib,sort]{natbib}
-\usepackage{enumerate}
+\usepackage[shortlabels]{enumitem}
 \usepackage{multicol}
 \usepackage{listings}
 \usepackage{fancybox}
@@ -52,6 +52,8 @@
 
 \newcommand{\Nonnil}{\mathbf{nonnil}}
 
+\newcommand{\Fail}{\mathrm{FAIL}}
+
 \DeclareMathOperator{\Gr}{\mathit{Gr}}
 \DeclareMathOperator{\Mgu}{\mathit{mgu}}
 
@@ -62,11 +64,12 @@
 
 \bibliographystyle{plain}
 
-% Default to setting ML in listings
+% Default settings for listings
 \lstset{
     basicstyle=\ttfamily,
     moredelim=**[is][\itshape]{@/}{/@},
     moredelim=**[is][\bfseries]{@@}{@@},
+    showstringspaces=false,
 }
 
 \lstdefinestyle{smalllisting}{
@@ -78,21 +81,17 @@
     alsoletter={\:},
     morecomment=[l]{---},
     morecomment=[l]{***},
+    morecomment=[n]{***(}{)},
+    morestring=[b]{"},
     keywords={load, pr, protecting, sort, sorts, subsort, subsorts, including,
               class, msg, msgs, endfm, fmod, is, mod, endm, omod, endom, view,
-              endv, from, to},
+              endv, from, to, TODO\:},
     keywords=[2]{eq,  mb, ceq, if, rl, crl, else, then, fi},
     keywords=[3]{ctor, assoc, comm, gather, id\:, label, metadata, owise, prec,
                  special, ditto, format},
     keywords=[4]{op, ops, var, vars},
-    keywords=[5]{=, =>, ->, ==, =/=, ~>, ::}
+    keywords=[5]{=, =>, ->, ~>, ::},
 }
-
-\makeatletter
-\newenvironment{CenteredBox}{%
-\begin{Sbox}}{% Save the content in a box
-\end{Sbox}\centerline{\parbox{\wd\@Sbox}{\TheSbox}}}% And output it centered
-\makeatother
 
 \setlength{\textheight}{8.5in}
 \setlength{\columnsep}{2.0pc}
@@ -160,8 +159,8 @@
 Equational unification is an important research area with many applications,
 such as cryptographic protocol analysis, automated theorem proving, and
 automated reasoning. In ``Unification modulo
-Chaining''~\cite{anantharaman2012unification}, the an algorithm is presented
-for solving unification problems modulo a theory of chaining. The algorithm is
+Chaining''~\cite{anantharaman2012unification}, an algorithm is presented for
+solving unification problems modulo a theory of chaining. The algorithm is
 modular in the sense that it does not depend on the interpretation of the
 elements in the lists, but is instead parameterized by a suitable element
 unification algorithm. We present an implementation of this algorithm in the
@@ -195,9 +194,11 @@ their camaraderie.
 
 I would like to thank my parents for their continued support.
 And I would like to thank my girlfriend, Mary Ferro, for more than I can say.
-Beyond just listening to my babbling about algorithms and ``the paper'', her
+Beyond just listening to my babbling about algorithms and ``the paper,'' her
 love and belief in me when I had lost my confidence have kept me going. Thank
 you.
+
+This work was supported in part by NSF grant CNS~09-05286.
 \end{quotation}
 
 \cleardoublepage
@@ -228,7 +229,7 @@ where $e_k$ represents block-level encryption with a key $k$, $\oplus$
 represents XOR, and $IV$ represents an \emph{initialization vector} --- a
 random initial input.
 
-In ``Unification modulo Chaining'', the authors present an algorithm for
+In ``Unification modulo Chaining,'' the authors present an algorithm for
 solving unification problems modulo a general theory of \emph{chaining}, then
 show how this can be used to solve problems modulo cipher block chaining in
 particular~\cite{anantharaman2012unification}. The notion of chaining
@@ -303,7 +304,7 @@ where $\compcirc$ is function composition.
 
 In this paper, we consider unification modulo a many-sorted algebra, with
 disjoint sorts $\Elt$ and $\List$ representing elements and lists,
-respectively.\footnote{In ``Unification modulo Chaining'', the names $\tau_e$
+respectively.\footnote{In ``Unification modulo Chaining,'' the names $\tau_e$
 and $\tau_l$ are used for $\Elt$ and $\List$, respectively.} Each function
 symbol in $\Sigma$ has an associated type signature, and terms that are not
 well-typed are considered syntactically invalid. The function symbols and their
@@ -322,13 +323,13 @@ names will use letters later in the alphabet.
 
 \subsection{Standard Form}\label{subsection:standard-form}
 
-The algorithm assumes that the unification problem is given in \emph{standard form},
-in which each equation has one of the following forms:
+The algorithm assumes that the unification problem is given in \emph{standard
+form}, in which each equation has one of the following forms:
 \begin{enumerate}[(i)]
     \item $U \ueq V$, where $U$ and $V$ are variables of the same sort
     \item $U \ueq f(V_1, \dotsc, V_n)$, where $U$ and $V_1$ through $V_n$ are
-        variables and $f$ has the correct arity (with respect to number and sorts
-        of its arguments)
+        variables and $f$ is a function symbol with the appropriate arity (with
+        respect to number and sorts of its arguments)
 \end{enumerate}
 Any unification problem $\p$ can be transformed into a unification problem
 $\p'$ in standard form such that unifiability is preserved and any unifier of
@@ -351,7 +352,7 @@ previous result. The function symbols $\Cons$ and $\Nil$ are the standard list
 constructors.
 
 When oriented from left to right into a rewrite system, $\BC$ is convergent.
-In ``Unification modulo Chaining'', it was shown that unification modulo $\BC$
+In ``Unification modulo Chaining,'' it was shown that unification modulo $\BC$
 is finitary, but not unitary.
 
 \subsection{The Element Theory (\texorpdfstring{$\HH$}{H})}
@@ -364,7 +365,8 @@ $\Hh$ should be semi-cancellative. A function symbol is semi-cancellative iff
 it has the property that:
 \[ \Hh(t_1, s_1) \approx_\HH^{} \Hh(t_2, s_2) \quad \Rightarrow \quad
 t_1 \approx_\HH^{} t_2 \; \Leftrightarrow \; s_1 \approx_\HH^{} s_2 \]
-for all terms $t_1, s_1, t_2, s_2$.
+for all terms $t_1, s_1, t_2, s_2$. Additionally, unification modulo $\HH$
+should be finitary.
 
 Two element theories were considered in ``Unification modulo Chaining'': one in
 which $\Hh$ is left uninterpreted, and another in which $\Hh$ is interpreted by
@@ -372,6 +374,10 @@ $\Hh(x, y) = e_k(x \oplus y)$, where $\oplus$ is XOR and $e_k$ is an
 uninterpreted function symbol representing encryption with a fixed key $k$.
 Note that this latter interpretation, combined with $\BC$, is exactly the
 definition of cipher block chaining.
+
+In the remaining sections, when we talk about unification modulo chaining,
+we will be referring to unification modulo the combined theory $\BC \cup \HH$
+for some $\HH$.
 
 \section{Algorithm for Unification modulo Chaining}\label{section:algorithm}
 
@@ -391,9 +397,12 @@ inference rule from the algorithm looks like:
     {\EQ ~ \cup ~ \{ U \ueq cons(v, W), \; x \ueq v, \; Y \ueq W \}}
     {\EQ ~ \uplus ~ \{ U \ueq cons(v, W), \; U \ueq cons(x, Y) \}}
 \]
-The premise (top) is matched against the current set of equations. If
-the match is successful, the set of equations is replaced by the conclusion
-(bottom), instantiated by the match. For example, with the above rule and
+The premise (top) is matched against the current set of equations. If the match
+is successful, the set of equations is replaced by the conclusion (bottom),
+instantiated by the match. Some inference rules are \emph{conditional}, in
+which case the condition must be checked before applying the rule.
+
+For example, with the above rule and
 the set of equations $\{ X \ueq cons(y_1, Z_1), \; X \ueq cons(y_2, Z_2) \}$,
 we can derive the set of equations $\{ X \ueq cons(y_1, Z_1), \; y_2 \ueq y_1,
 \; Z_2 \ueq Z_1 \}$. We could also derive the set of equations $\{ X \ueq
@@ -401,11 +410,12 @@ cons(y_2, Z_2), \; y_1 \ueq y_2, \; Z_1 \ueq Z_2 \}$, since the order of the
 elements in the initial set is not fixed.
 
 This is one example of the nondeterminism that can arise in the algorithm.
-This particular inference rule is classified as ``don't care'' in the system,
-which means the algorithm is free to choose either conclusion. Some inference
-rules are classified ``don't know'' and require branching. Fore more information
-about ``don't care'' and ``don't know'' rules, as well as the full set of inference
-rules, see Appendix~\ref{appendix:inference}.
+This particular inference rule is classified as ``don't care''-nondeterministic
+in the system, which means the algorithm is free to choose either conclusion.
+Some inference rules are classified ``don't know''-nondeterministic and require
+branching. Fore more information about ``don't care'' and ``don't know'' rules,
+as well as the full set of inference rules, see
+Appendix~\ref{appendix:inference}.
 
 \subsection{Dependency Graph}\label{subsection:graph}
 
@@ -430,7 +440,7 @@ graph $G_L(\EQ)$:
         \emph{at least} one edge labelled $>_{\Cons}$.
 \end{enumerate}
 Since two list variables connected by $\sim_{\Bc}$ must be assigned lists with
-the same length by any unifier, $\succ_L$ can be interpreted as ``longer than''.
+the same length by any unifier, $\succ_L$ can be interpreted as ``longer than.''
 
 \subsection{The \texorpdfstring{$\Nonnil$}{nonnil} Set}
 \label{subsection:nonnil}
@@ -450,7 +460,7 @@ Our implementation of the unification algorithm is written in the Maude
 programming language, developed at the University of Illinois at
 Urbana-Champaign. Maude, according to its website, is ``a high-performance
 reflective language supporting both equation and rewriting logic
-specification''. This excellent support for reflective programming makes Maude
+specification.'' This excellent support for reflective programming makes Maude
 an attractive target for applications related to term-rewriting, because
 implementors can turn Maude's powerful unification and rewriting capabilities
 back on terms at the meta-level.
@@ -461,11 +471,11 @@ familiar with Maude \emph{unless} one is familiar with meta-level programming.)
 Maude programs are built around \emph{modules}, which correspond to rewrite
 systems in term-rewriting. Modules contain definitions of sorts, subsort
 relationships, operators, sort membership axioms, equations, and rules.
-Equations are assumed to convergent when oriented from left to right, while
+Equations are assumed to be convergent when oriented from left to right, while
 rules have no such restrictions.
 
 As much as possible, our implementation is built around general-purpose
-libraries rather than one-off solutions. To this end, there are a few big
+libraries rather than one-off solutions. To this end, there are a few important
 modules that deserve their own description. The full source code for this
 project is given in Appendix~\ref{appendix:implementation}.
 
@@ -489,8 +499,8 @@ branch has no rule applicable to it.
 
 To be recognized by this strategy, a rule must be labelled and must be tagged
 with metadata describing its precedence and whether it is deterministic or
-nondeterministic (corresponding to ``don't-care'' and ``don't-know'',
-respectively).  For example, the inference rule given in
+nondeterministic (corresponding to ``don't care'' and ``don't know,''
+respectively). For example, the inference rule given in
 Subsection~\ref{subsection:inference} is implemented in the module
 \lstinline|BC-INFERENCE| by the rule:
 \begin{lstlisting}[language=Maude, style=smalllisting]
@@ -527,10 +537,11 @@ It takes as its arguments a meta-representation of the module module in which
 to rewrite, a term representing the object to be rewritten, a term representing
 failure, and natural number indicating the number of solutions to skip. This
 last argument is required because \lstinline|inferenceRules| is what Maude
-calls a \emph{descent function}. Rather than return all solutions at once, the caller
-specifies which solution is desired. Note that \lstinline|inferenceRules| is a
-partial function (its range is a kind); the operation is undefined if, for
-example, the module argument does not represent a valid module.
+calls a \emph{descent function}. Rather than return all solutions at once, the
+caller specifies which solution is desired. Note that
+\lstinline|inferenceRules| is a partial function (its range is a kind); the
+operation is undefined if, for example, the module argument does not represent
+a valid module.
 
 \subsection{The \TitleListing{GRAPH} and \TitleListing{META-GRAPH} Modules}
 \label{subsection:graph-mod}
@@ -648,10 +659,10 @@ exists at the meta-level.
 
 From the view, we extract a signature, which contains the names of the symbols
 for $\Bc$, $\Hh$, $\Cons$, $\Nil$, $\Elt$, and $\List$. A module
-\lstinline|BC-SIGNATURE| is provided with the default names for these symbols, as
-well as a view \lstinline|BcSignature| from \lstinline|BC| to
-\lstinline|BC-SIGNATURE|. The view is also used to find the module in which
-the second phase of our algorithm --- solving the element equations --- will be
+\lstinline|BC-SIGNATURE| is provided with the default names for these symbols,
+as well as a view \lstinline|BcSignature| from \lstinline|BC| to
+\lstinline|BC-SIGNATURE|. The view is also used to find the module in which the
+second phase of our algorithm --- solving the element equations --- will be
 performed. The ``to'' module of the view will be passed to the unification
 algorithm for the element theory.
 
@@ -685,13 +696,14 @@ model cypher block chaining with a list-level decryption operator. Implementing
 this algorithm should only require an extended set of inference rules and a
 more complicated list dependency graph.
 
-Currenty there is at least one attack on cypher block chaining in the wild.
-The ``BEAST'' attack on TLS from 2011 abuses the fact that TLS 1.0 allows
-implementations to use the last encrypted block of a record as the
-initialization vector of the next, rather than generating a new initialization
-vector for each record~\cite{ekr2011security}. It is our hope that,
-through symbolic protocol analysis, we will uncover more attacks like this in
-an automated way.
+Currently there is at least one attack on cypher block chaining in the wild.
+The ``BEAST'' attack on TLS, developed in 2010 by Duong and Rizzo, abuses the
+fact that TLS 1.0 allows implementations to use the last encrypted block of the
+previous record as the initialization vector of the next, rather than
+generating a new initialization vector for each
+record~\cite{rizzo2010practical,ekr2011security}. It is our hope that, through
+symbolic protocol analysis, we will uncover more attacks like this in an
+automated way.
 
 \bibliography{bc-unification}
 
@@ -710,106 +722,113 @@ this point.
 
 \subsection{\texorpdfstring{``Don't Care''}{"Don't Care"}-Nondeterministic Rules}
 
-The following rules are ``don't care''-nondeterministic.
-\begin{description}
-    \item[(L1)] {\em Variable Elimination}:
+The following rules are ``don't care''-nondeterministic. In theory, these rules
+can be applied in any order without changing the space of solutions. In practice
+(and in our implementation) we apply rules according to a precedence order to
+ensure termination.
+\begin{enumerate}[(L1), align=left, font=\bfseries]
+    \item \emph{Variable Elimination}:
         \[\infer[\quad \text{if } U \text{ occurs in } \EQ ]
-            {[V/U](\EQ) ~ \cup ~ \{U \ueq V\} }
-            { \EQ ~ \cup ~ \{U \ueq V\} }
+            {\; [V/U](\EQ) ~ \cup ~ \{U \ueq V\} \;}
+            {\; \EQ ~ \cup ~ \{U \ueq V\} \;}
         \]
 
-    \item[(L2)] {\em Cancellation on $cons$}:
+    \item \emph{Cancellation on $\Cons$}:
         \[\infer
-            {\EQ ~ \cup ~ \{ U \ueq cons(v, W), \; x \ueq v, \; Y \ueq W \}}
-            {\EQ ~ \uplus ~ \{ U \ueq cons(v, W), \; U \ueq cons(x, Y) \}}
+            {\; \EQ ~ \cup ~ \{ U \ueq cons(v, W), \; x \ueq v, \; Y \ueq W \} \;}
+            {\; \EQ ~ \uplus ~ \{ U \ueq cons(v, W), \; U \ueq cons(x, Y) \} \;}
         \]
-
-    \item[(L3.a)] {\em Nil solution-1}:
+\end{enumerate}
+\begin{enumerate}[(L3.a), align=left, font=\bfseries]
+    \item \emph{Nil solution-1}:
         \[\infer
-            {\EQ ~ \cup ~ \{ U \ueq nil, \; V \ueq nil \}}
-            {\EQ ~ \uplus ~ \{ U \ueq bc(V, w), \; U \ueq nil \}}
+            {\; \EQ ~ \cup ~ \{ U \ueq nil, \; V \ueq nil \} \;}
+            {\; \EQ ~ \uplus ~ \{ U \ueq bc(V, w), \; U \ueq nil \} \;}
         \]
 
-    \item[(L3.b)] {\em Nil solution-2}:
+    \item \emph{Nil solution-2}:
         \[\infer
-            {\EQ ~ \cup ~ \{ U \ueq nil, \; V \ueq nil \}}
-            {\EQ ~ \uplus ~ \{ U \ueq bc(V, w), \; V \ueq nil \}}
+            {\; \EQ ~ \cup ~ \{ U \ueq nil, \; V \ueq nil \} \;}
+            {\; \EQ ~ \uplus ~ \{ U \ueq bc(V, w), \; V \ueq nil \} \;}
         \]
 
-    \item[(L3.c)] {\em Nil solution-3}:
+    \item \emph{Nil solution-3}:
         \[\infer[\quad \mathrm{if} ~ V >_{bc}^{+} U ]
-            {\EQ ~ \cup ~ \{ U \ueq nil, \; V \ueq nil \}}
-            {\EQ ~ \uplus ~ \{ U \ueq bc(V, w) \}}
+            {\; \EQ ~ \cup ~ \{ U \ueq nil, \; V \ueq nil \} \;}
+            {\; \EQ ~ \uplus ~ \{ U \ueq bc(V, w) \} \;}
         \]
-
-    \item[(L4.a)] {\em Semi-Cancellation on $bc$}, at a $bc/bc$-peak:
+\end{enumerate}
+\begin{enumerate}[(L4.a), align=left, font=\bfseries]
+    \item \emph{Semi-Cancellation on $\Bc$}, at a $\Bc/\Bc$-peak:
         \[\infer
-            {\EQ ~ \cup ~ \{U \ueq bc(V, w), \; W \ueq V \}}
-            {\EQ ~ \uplus ~ \{ U \ueq bc(V, w), \; U \ueq bc(X, w) \}}
+            {\; \EQ ~ \cup ~ \{U \ueq bc(V, w), \; W \ueq V \} \;}
+            {\; \EQ ~ \uplus ~ \{ U \ueq bc(V, w), \; U \ueq bc(X, w) \} \;}
         \]
 
-    \item[(L4.b)] {\em Push $bc$ below $cons$}, at a $\mathbf{nonnil}$ $bc/bc$-peak:
+    \item \emph{Push $\Bc$ below $\Cons$}, at a $\Nonnil$ $\Bc/\Bc$-peak:
         \[\infer[\quad \text{if } U \in \Nonnil]
-            {\begin{aligned}
+            {\; \begin{aligned}
                 \EQ ~ \cup ~ \{
                 & V \ueq cons(v', Z), \; X \ueq cons(x', Z), \;
-                  U \ueq cons(u', U''), \; \\[-4pt]
-                & U'' \ueq bc(Z, u'), \; u' \ueq h(v', w), \; u' \ueq h(x', y) \}
-            \end{aligned}}
-            {\EQ ~ \uplus ~ \{ U \ueq bc(V, w), \; U \ueq bc(X, y) \}}
+                  U \ueq cons(u', U''), \\[-4pt]
+                & U'' \ueq bc(Z, u'), \; u' \ueq h(v', w), \;
+                  u' \ueq h(x', y) \}
+            \end{aligned} \;}
+            {\; \EQ ~ \uplus ~ \{ U \ueq bc(V, w), \; U \ueq bc(X, y) \} \;}
         \]
-
-    \item[(L5)] {\em Splitting}, at a $cons/bc$-peak:
+\end{enumerate}
+\begin{enumerate}[(L1), align=left, font=\bfseries, start=5]
+    \item \emph{Splitting}, at a $\Cons/\Bc$-peak:
         \[\infer
-            {\EQ ~ \cup ~ \{ U \ueq cons(v, W) , \; X \ueq cons(x', X''), \;
-                             W \ueq bc(X'', v), \; v \ueq h(x', y) \}}
-            {\EQ ~ \uplus ~ \{ U \ueq cons(v, W), \;
-                               U \ueq bc(X, y) \}}
+        {\; \EQ ~ \cup ~ \{ U \ueq cons(v, W) , \; X \ueq cons(x', X''), \;
+              W \ueq bc(X'', v), \; v \ueq h(x', y) \} \;}
+        {\; \EQ ~ \uplus ~ \{ U \ueq cons(v, W), \; U \ueq bc(X, y) \} \;}
         \]
 
-    \item[(L6)] {\em Occur-Check Violation}:
+    \item \emph{Occur-Check Violation}:
         \[\infer[\quad \text{if } U \text{ occurs in } \EQ
                  \text{ and }  U \succ_L U]
-            { FAIL }
-            { \EQ }
+            {\; \Fail \;}
+            {\; \EQ \;}
         \]
 
-    \item[(L7)] {\em Size Conflict}:
+    \item \emph{Size Conflict}:
         \[\infer
-            { FAIL }
-            { \EQ ~ \uplus ~ \{ U \ueq cons(v, W), \; U \ueq nil \} }
+            {\; \Fail \;}
+            {\; \EQ ~ \uplus ~ \{ U \ueq cons(v, W), \; U \ueq nil \} \;}
         \]
-\end{description}
+\end{enumerate}
 
 \subsection{\texorpdfstring{``Don't Know''}{"Don't Know"}-Nondeterministic Rules}
 
-The remaining rules are ``don't know'' nondeterministic. Different orders of
+The remaining rules are ``don't know''-nondeterministic. Different orders of
 application will lead to different unifiers. A complete set of unifiers can
 be obtained by trying all branches.
-\begin{description}
-    \item[(L8)] {\em Nil-solution-Branch for $bc$\/}, at a $bc/bc$-peak:
+\begin{enumerate}[(L1), align=left, font=\bfseries, start=8]
+    \item \emph{Nil-solution-Branch for $\Bc$}, at a $\Bc/\Bc$-peak:
         \[\infer
-            {\EQ ~ \cup ~ \{ U \ueq nil, \; V \ueq nil, \; X \ueq nil \}}
-            {\EQ ~ \uplus ~ \{ U \ueq bc(V, w), \; U \ueq bc(X, y) \}}
+            {\; \EQ ~ \cup ~ \{ U \ueq nil, \; V \ueq nil, \; X \ueq nil \} \;}
+            {\; \EQ ~ \uplus ~ \{ U \ueq bc(V, w), \; U \ueq bc(X, y) \} \;}
         \]
 
-    \item[(L9)] {\em Guess a non-Nil branch for $bc$\/}, at a $bc/bc$-peak:
+    \item \emph{Guess a non-Nil branch for $\Bc$}, at a $\Bc/\Bc$-peak:
         \[\infer
-            {\begin{aligned}
+            {\; \begin{aligned}
                 \EQ ~ \cup ~ \{
                 & V \ueq cons(v', Z), \; X \ueq cons(x', Z), \;
-                  U \ueq cons(u', U''), \; \\[-4pt]
-                & U'' \ueq bc(Z, u'), \; u' \ueq h(v', w), \; u' \ueq h(x', y) \}
-            \end{aligned}}
-            {\EQ ~ \uplus ~ \{ U \ueq bc(V, w), \; U \ueq bc(X, y) \}}
+                  U \ueq cons(u', U''), \\[-4pt]
+                & U'' \ueq bc(Z, u'), \; u' \ueq h(v', w), \;
+                  u' \ueq h(x', y) \}
+            \end{aligned} \;}
+            {\; \EQ ~ \uplus ~ \{ U \ueq bc(V, w), \; U \ueq bc(X, y) \} \;}
         \]
 
-    \item[(L10)] {\em Standard Unification on $bc$}:
+    \item \emph{Standard Unification on $\Bc$}:
         \[\infer
-            {\EQ ~ \cup ~ \{ U \ueq bc(V, w), \; X \ueq V, \; y \ueq w \}}
-            {\EQ ~ \uplus ~ \{ U \ueq bc(V, w), \; U \ueq bc(X, y) \}}
+            {\; \EQ ~ \cup ~ \{ U \ueq bc(V, w), \; X \ueq V, \; y \ueq w \} \;}
+            {\; \EQ ~ \uplus ~ \{ U \ueq bc(V, w), \; U \ueq bc(X, y) \} \;}
         \]
-\end{description}
+\end{enumerate}
 
 \newpage
 \section{Implementation}\label{appendix:implementation}
