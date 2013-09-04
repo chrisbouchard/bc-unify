@@ -170,7 +170,7 @@ unification algorithm. We present an implementation of this algorithm in the
 Maude programming language.
 
 \medskip{}
-\textit{Keywords:} Cypher block chaining, Equational unification, Maude, Protocol
+\textit{Keywords:} Cipher block chaining, Equational unification, Maude, Protocol
 analysis, Term rewriting.
 \end{quotation}
 
@@ -223,7 +223,7 @@ decrypting a later block, preventing him or her from attacking individual
 blocks in parallel.
 
 Formally, if a message's plaintext contains blocks $[M_1, \dotsc, M_n]$, then
-the cyphertext will contain blocks $[C_1, \dotsc, C_n]$ such that:
+the ciphertext will contain blocks $[C_1, \dotsc, C_n]$ such that:
 \begin{align*}
     C_1 &= e_k(M_1 \oplus IV) &
     C_i &= e_k(M_i \oplus C_{i-1})
@@ -308,10 +308,9 @@ where $\compcirc$ is function composition.
 The algorithm assumes that the unification problem is given in \emph{standard
 form}, in which each equation has one of the following forms:
 \begin{enumerate}[(i)]
-    \item $U \ueq V$, where $U$ and $V$ are variables of the same sort
+    \item $U \ueq V$, where $U$ and $V$ are variables
     \item $U \ueq f(V_1, \dotsc, V_n)$, where $U$ and $V_1$ through $V_n$ are
-        variables and $f$ is a function symbol with the appropriate arity (with
-        respect to number and sorts of its arguments)
+        variables and $f$ is a function symbol with the appropriate arity
 \end{enumerate}
 Any unification problem $\p$ can be transformed into a unification problem
 $\p'$ in standard form such that unifiability is preserved and any unifier of
@@ -322,9 +321,9 @@ linear in the size of the input problem.
 
 In this paper, we consider unification modulo a many-sorted
 algebra~\cite{walther1988many, kirchner1988order}, with disjoint sorts $\Elt$
-and $\List$ representing elements and lists, respectively\footnote{In
+and $\List$ representing elements and lists, respectively.\footnote{In
 ``Unification modulo Chaining,'' the names $\tau_e$ and $\tau_l$ are used for
-$\Elt$ and $\List$, respectively.}. Each function symbol in $\Sigma$ has an
+$\Elt$ and $\List$, respectively.} Each function symbol in $\Sigma$ has an
 associated type signature, and terms that are not well-typed are considered
 syntactically invalid. The function symbols and their type signatures are given
 below:
@@ -339,6 +338,13 @@ $\X_E$ and $\X_L$, containing the variables of sorts $\Elt$ and $\List$, respect
 We will use lower case names (e.g., $u$, $v$, $w$) for variables in $\X_E$, and
 uppercase names (e.g., $U$, $V$, $W$) for variables in $\X_L$. In general, variable
 names will use letters later in the alphabet.
+
+We extend the typing of terms to equations in standard form. If $U \ueq t$ is
+an equation in standard form, then $U \ueq t$ is well-typed iff $U$ and $t$
+have the same sort. We call this the sort of the equation. For example, the
+equation $U \ueq \Cons(v, W)$ has sort $\List$ --- we say $U \ueq \Cons(v, W)$
+is a \emph{list equation}. Similarly, $u \ueq h(x, y)$ has sort $\Elt$ and is
+an \emph{element equation}.
 
 \section{The Theory of Chaining (\texorpdfstring{$\BC$}{BC})}
 \label{section:theory}
@@ -698,16 +704,16 @@ as it runs, allowing them to be updated rather than recomputed.
 
 Finally, an extended algorithm has been developed for solving unification
 problems modulo a related theory with a ``de-chaining'' operator, which could
-model cypher block chaining with a list-level decryption operator. Implementing
+model cipher block chaining with a list-level decryption operator. Implementing
 this algorithm should only require an extended set of inference rules and a
 more complicated list dependency graph.
 
-Currently there is at least one attack on cypher block chaining in the wild.
+Currently there is at least one attack on cipher block chaining in the wild.
 The ``BEAST'' attack on TLS, developed in 2010 by Duong and Rizzo, abuses the
 fact that TLS 1.0 allows implementations to use the last encrypted block of the
 previous record as the initialization vector of the next, rather than
 generating a new initialization vector for each
-record~\cite{rizzo2010practical,ekr2011security}. It is our hope that, through
+record~\cite{rizzo2010practical, ekr2011security}. It is our hope that, through
 symbolic protocol analysis, we will uncover more attacks like this in an
 automated way.
 
