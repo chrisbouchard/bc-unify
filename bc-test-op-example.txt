@@ -1,6 +1,6 @@
     Maude> @/select TEST-BC-UNIFICATION ./@
-    Maude> @/red bc-unify('cons['u:Elt, 'V:List] =? 'bc['W:List, 'x:Elt] /\/@
-    > @/'W:List =? 'cons['y:Elt, 'Z:List], upView('BcSignature), 0, 0) ./@
+    Maude> @/red bc-unify('cons['u:Elt,'V:List] =? 'bc['W:List,'x:Elt] /\/@
+    > @/'W:List =? 'cons['y:Elt,'Z:List], upView('BcSignature), 0, 0) ./@
     reduce in TEST-BC-UNIFICATION : bc-unify('W:List =? 'cons['y:Elt,
         'Z:List]'cons['u:Elt,'V:List] =? 'bc['W:List,'x:Elt], upView(
         'BcSignature), 0, 0) .
@@ -11,8 +11,8 @@
             'u:Elt <- 'h['#4:Elt,'#5:Elt] ;
             'x:Elt <- '#5:Elt ;
             'y:Elt <- '#4:Elt,5}
-    Maude> @/red bc-unify('cons['u:Elt, 'V:List] =? 'bc['W:List, 'x:Elt] /\/@
-    > @/'W:List =? 'cons['y:Elt, 'Z:List], upView('BcSignature), 0, 1) ./@
+    Maude> @/red bc-unify('cons['u:Elt,'V:List] =? 'bc['W:List,'x:Elt] /\/@
+    > @/'W:List =? 'cons['y:Elt,'Z:List], upView('BcSignature), 0, 1) ./@
     reduce in TEST-BC-UNIFICATION : bc-unify('W:List =? 'cons['y:Elt,
         'Z:List]'cons['u:Elt,'V:List] =? 'bc['W:List,'x:Elt], upView(
         'BcSignature), 0, 1) .
