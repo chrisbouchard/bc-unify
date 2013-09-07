@@ -1,4 +1,4 @@
-\documentclass[11pt]{article}
+\documentclass[11pt,twoside,titlepage]{article}
 
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
@@ -104,6 +104,7 @@
 \setlength{\headsep}{0.0in}
 \setlength{\parskip}{0.05in}
 \setlength{\oddsidemargin}{-.15in}
+\setlength{\evensidemargin}{-.15in}
 \setlength{\parindent}{1pc}
 
 \pagestyle{plain}
@@ -155,6 +156,9 @@
     \par\end{center}
 \end{titlepage}
 
+\thispagestyle{empty}
+\cleardoublepage
+
 \begin{center}
     \textbf{Abstract}
 \end{center}
@@ -204,7 +208,7 @@ you.
 This work was supported in part by NSF grant CNS~09-05286.
 \end{quotation}
 
-\cleardoublepage
+\clearpage
 \tableofcontents
 
 \clearpage
@@ -215,10 +219,11 @@ This work was supported in part by NSF grant CNS~09-05286.
 Equational unification is an important research area with many applications in
 cryptographic protocol analysis and automated reasoning. One such application
 in protocol analysis is the study of a technique called \emph{cipher block
-chaining} used in the SSL and TLS cryptographic protocols~\cite{rfc5246}. In
-cipher block chaining, one encrypts blocks of a message by masking the current
-block with the previous encrypted block, then applying the encryption function
-to the result. This forces an attacker to decrypt all previous blocks before
+chaining}, invented in 1978 at IBM~\cite{ehrsam1978message} and currently used
+in the SSL and TLS cryptographic protocols~\cite{rfc5246}. In cipher block
+chaining, one encrypts blocks of a message by masking the current block with
+the previous encrypted block, then applying the encryption function to the
+result. This forces an attacker to decrypt all previous blocks before
 decrypting a later block, preventing him or her from attacking individual
 blocks in parallel.
 
@@ -226,7 +231,7 @@ Formally, if a message's plaintext contains blocks $[M_1, \dotsc, M_n]$, then
 the ciphertext will contain blocks $[C_1, \dotsc, C_n]$ such that:
 \begin{align*}
     C_1 &= e_k(M_1 \oplus IV) &
-    C_i &= e_k(M_i \oplus C_{i-1})
+    C_{i+1} &= e_k(M_i \oplus C_i)
 \end{align*}
 where $e_k$ represents block-level encryption with a key $k$, $\oplus$
 represents XOR, and $IV$ represents an \emph{initialization vector} --- a
@@ -718,6 +723,7 @@ record~\cite{rizzo2010practical, ekr2011security}. It is our hope that, through
 symbolic protocol analysis, we will uncover more attacks like this in an
 automated way.
 
+\clearpage
 \bibliography{bc-unification}
 
 \clearpage
@@ -733,6 +739,10 @@ set of equations, a rule may be picked arbitrarily. When more than one ``don't
 know'' rule is applicable, any could be applied. The algorithm must branch at
 this point.
 
+Some rules have variables in their conclusions that do not occur in their
+premise. These are called \emph{fresh variables}, and should be instantiated
+with new variables that do not occur in the equations.
+
 \subsection{\texorpdfstring{``Don't Care''}{"Don't Care"}-Nondeterministic Rules}
 
 The following rules are ``don't care''-nondeterministic. In theory, these rules
@@ -743,7 +753,7 @@ ensure termination.
     \item \emph{Variable Elimination}:
         \[\infer[\quad \text{if } U \text{ occurs in } \EQ ]
             {\; [V/U](\EQ) ~ \cup ~ \{U \ueq V\} \;}
-            {\; \EQ ~ \cup ~ \{U \ueq V\} \;}
+            {\; \EQ ~ \uplus ~ \{U \ueq V\} \;}
         \]
 
     \item \emph{Cancellation on $\Cons$}:
@@ -840,6 +850,29 @@ be obtained by trying all branches.
         \[\infer
             {\; \EQ ~ \cup ~ \{ U \ueq bc(V, w), \; X \ueq V, \; y \ueq w \} \;}
             {\; \EQ ~ \uplus ~ \{ U \ueq bc(V, w), \; U \ueq bc(X, y) \} \;}
+        \]
+\end{enumerate}
+
+\subsection{Additional Rules}
+
+There are two additional inference rules in our implementation that do not
+appear in ``Unification modulo Chaining,'' where they are simply assumed. The
+first rule is unique in that it contains a ``term variable,'' which can be
+matched against any term (to avoid having an instance for each symbol in the
+signature). Note also that in the first rule, $\EQ$ is treated as a multiset.
+This is true of all inference rules in our implementation, which is why the
+rule is required.
+\begin{enumerate}[(L{1}.a), align=left, font=\bfseries, start=2]
+    \item \emph{Repetition Elimination}:
+        \[\infer
+            {\; \EQ ~ \cup ~ \{U \ueq t\} \;}
+            {\; \EQ ~ \uplus ~ \{U \ueq t, \; U \ueq t\} \;}
+        \]
+
+    \item \emph{Trivial Elimination}:
+        \[\infer
+            {\; \EQ \;}
+            {\; \EQ ~ \uplus ~ \{U \ueq U\} \;}
         \]
 \end{enumerate}
 
