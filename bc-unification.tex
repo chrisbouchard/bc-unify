@@ -40,7 +40,7 @@
 
 \newcommand{\BC}{\mathcal{BC}}
 \newcommand{\HH}{\mathcal{H}}
-\newcommand{\EQ}{\mathcal{EQ}}
+\newcommand{\EQ}{\mathcal{E\hspace{-1pt}Q}}
 \newcommand{\Pos}{\mathcal{P}\!os}
 \newcommand{\FPos}{\mathcal{FP\!}os}
 \newcommand{\Var}{\mathcal{V}\!ar}
@@ -271,17 +271,18 @@ a prime candidate for our implementation.
 
 \section{Notation and Preliminaries}\label{section:notation}
 
-We consider a rewrite system over a ranked signature, denoted $\Sigma$, and a
-possibly infinite set of variables, denoted $\X$. We assume the reader is
-familiar with the usual notions and concepts in term rewriting systems and
-equational unification~\cite{Term, BaaderSnyd-01}. An \emph{equation} is an
-ordered pair of terms $(s, \, t)$, usually written as $s \approx t$. Here
-$s$~is the \emph{le\vspace{-0.2pt}ft-hand side} and $t$~is the \emph{right-hand
-side} of the equation. A \emph{theory} is a set of equations, in which case the
+We consider a rewrite system over a ranked signature and a possibly infinite
+set of variables. We assume the reader is familiar with the usual notions and
+concepts in term rewriting systems and equational unification~\cite{Term,
+BaaderSnyd-01}. An \emph{equation} is an ordered pair of terms $(s, \, t)$,
+usually written as $s \approx t$. Here $s$~is the
+\emph{le\vspace{-0.2pt}ft-hand side} and $t$~is the \emph{right-hand side} of
+the equation. A \emph{theory} is a set of equations, in which case the
 equations are also called \emph{axioms}. A \emph{rewrite rule} is an equation
 $s \approx t$ where $\Var(s) \supseteq \Var(t)$, usually written as~$s \to t$.
 A \emph{term rewriting system} (or simply \emph{rewrite system}) is a set of
-rewrite rules.
+rewrite rules. The signature of a theory $E$ will be denoted by $\Sigma_E$, and
+the signature of a rewrite system $R$ by $\Sigma_R$.
 
 \subsection{Unification}\label{subsection:unification}
 
@@ -305,8 +306,8 @@ hold~\cite{jouannaud1991solving}:
 \end{enumerate}
 It is this last condition that gives dag-solved form its name, because the
 equations can be thought to form a directed acyclic graph. A set of equations
-in dag solved form has the following unifier:
-\[\sigma = (x_n \mapsto t_n) \compcirc \dotsb \compcirc (x_1 \mapsto t_1)\]
+in dag-solved form has the following unifier:
+\[\sigma = \{ x_n \mapsto t_n \} \compcirc \dotsb \compcirc \{ x_1 \mapsto t_1 \}\]
 where $\compcirc$ is function composition.
 
 \subsection{Standard Form}\label{subsection:standard-form}
@@ -315,8 +316,9 @@ The algorithm assumes that the unification problem is given in \emph{standard
 form}, in which each equation has one of the following forms:
 \begin{enumerate}[(i)]
     \item $U \ueq V$, where $U$ and $V$ are variables
+    \item $U \ueq a$, where $U$ is a variable and $a$ is a constant
     \item $U \ueq f(V_1, \dotsc, V_n)$, where $U$ and $V_1$ through $V_n$ are
-        variables and $f$ is a function symbol with the appropriate arity
+        variables and $f$ is a function symbol
 \end{enumerate}
 Any unification problem $\p$ can be transformed into a unification problem
 $\p'$ in standard form such that unifiability is preserved and any unifier of
@@ -329,7 +331,7 @@ In this paper, we consider unification modulo a many-sorted
 algebra~\cite{walther1988many, kirchner1988order}, with disjoint sorts $\Elt$
 and $\List$ representing elements and lists, respectively.\footnote{In
 ``Unification modulo Chaining,'' the names $\tau_e$ and $\tau_l$ are used for
-$\Elt$ and $\List$, respectively.} Each function symbol in $\Sigma$ has an
+$\Elt$ and $\List$, respectively.} Each function symbol in $\Sigma_\BC$ has an
 associated type signature, and terms that are not well-typed are considered
 syntactically invalid. The function symbols and their type signatures are given
 below:
@@ -348,9 +350,9 @@ names will use letters later in the alphabet.
 We extend the typing of terms to equations in standard form. If $U \ueq t$ is
 an equation in standard form, then $U \ueq t$ is well-typed iff $U$ and $t$
 have the same sort. We call this the sort of the equation. For example, the
-equation $U \ueq \Cons(v, W)$ has sort $\List$ --- we say $U \ueq \Cons(v, W)$
-is a \emph{list equation}. Similarly, $u \ueq h(x, y)$ has sort $\Elt$ and is
-an \emph{element equation}.
+equation $U \ueq \Cons(v, W)$ has sort $\List$, and we will refer to it as a
+\emph{list equation}. Similarly, $u \ueq h(x, y)$ has sort $\Elt$ and is an
+\emph{element equation}.
 
 \section{The Theory of Chaining (\texorpdfstring{$\BC$}{BC})}
 \label{section:theory}
@@ -377,16 +379,18 @@ is finitary, but not unitary.
 Since chaining is a higher-order operation, we consider a fixed function $\Hh$.
 We assume there is a theory $\HH$ that interprets $\Hh$, which we call the
 \emph{element theory}. This theory should be non-subterm-collapsing and
-$\Hh$ should be semi-cancellative. A function symbol is semi-cancellative iff
-it has the property that:
+$\Hh$ should be semi-cancellative. A function symbol is
+\emph{semi-cancel{}lative} iff it has the property that:
 \[ \Hh(t_1, s_1) \approx_\HH^{} \Hh(t_2, s_2) \quad \Rightarrow \quad
 t_1 \approx_\HH^{} t_2 \; \Leftrightarrow \; s_1 \approx_\HH^{} s_2 \]
 for all terms $t_1, s_1, t_2, s_2$. Additionally, unification modulo $\HH$
-should be finitary.
+should be finitary. Finally, the signature of $\HH$ must be disjoint from
+that of $\BC$ except for the symbol $\Hh$, i.e., $\Sigma_\BC \cap \Sigma_\HH
+\subseteq \{h\}$.
 
 Two element theories were considered in ``Unification modulo Chaining'': one in
 which $\Hh$ is left uninterpreted, and another in which $\Hh$ is interpreted by
-$\Hh(x, y) = e_k(x \oplus y)$, where $\oplus$ is XOR and $e_k$ is an
+$\Hh(x, y) \mapsto e_k(x \oplus y)$, where $\oplus$ is XOR and $e_k$ is an
 uninterpreted function symbol representing encryption with a fixed key $k$.
 Note that this latter interpretation, combined with $\BC$, is exactly the
 definition of cipher block chaining.
@@ -756,7 +760,7 @@ ensure termination.
             {\; \EQ ~ \uplus ~ \{U \ueq V\} \;}
         \]
 
-    \item \emph{Cancellation on $\Cons$}:
+    \item \emph{Cancel{}lation on $\Cons$}:
         \[\infer
             {\; \EQ ~ \cup ~ \{ U \ueq cons(v, W), \; x \ueq v, \; Y \ueq W \} \;}
             {\; \EQ ~ \uplus ~ \{ U \ueq cons(v, W), \; U \ueq cons(x, Y) \} \;}
@@ -782,7 +786,7 @@ ensure termination.
         \]
 \end{enumerate}
 \begin{enumerate}[(L4.a), align=left, font=\bfseries]
-    \item \emph{Semi-Cancellation on $\Bc$}, at a $\Bc/\Bc$-peak:
+    \item \emph{Semi-Cancel{}lation on $\Bc$}, at a $\Bc/\Bc$-peak:
         \[\infer
             {\; \EQ ~ \cup ~ \{U \ueq bc(V, w), \; W \ueq V \} \;}
             {\; \EQ ~ \uplus ~ \{ U \ueq bc(V, w), \; U \ueq bc(X, w) \} \;}
@@ -970,7 +974,7 @@ version of \lstinline|BC-UNIFICATION| instantiated with the view
 \lstinline|MetaUnifyAlg|, which uses the built-in unification operation
 \lstinline|metaUnify| from \lstinline|META-LEVEL|. The problem is given as
 set of equations separated by \lstinline|/\| (slash-backslash or ``wedge'').
-Equations are given as a pair of terms separated by \lstinline|=?|
+An equations are given as a pair of terms separated by \lstinline|=?|
 (equals-question-mark).
 
 The view must be a meta-representation of an object-level view (i.e., it must
@@ -979,7 +983,11 @@ following operator:
 \begin{lstlisting}[language=Maude, style=smalllisting]
     op upView : [Qid] -> [View] [special (...)] .
 \end{lstlisting}
-where the \lstinline|Qid| parameter is the name of the view.
+where the \lstinline|Qid| parameter is the name of the view. All terms
+appearing in the unification problem must be valid meta-representations of
+terms in the ``to'' module of the view. This includes, for example, element
+constants, which must be explicitly declared. The module used in
+\lstinline|TEST-BC-UNIFICATION| declares no element constants.
 
 Here is an example of two calls to \lstinline|bc-unify|:
 \vspace{1ex}
@@ -1020,7 +1028,7 @@ which tests the non-deterministic rules. The number is passed to
 \lstinline|bc-unify| as its skip parameter.
 \vspace{1ex}
 \lstinputlisting[style=smalllisting]{test-nondet-example.txt}
-Each unifier is returned twice in this case, because there are two different
+Each unifier is returned twice in this case because there are two different
 ways to apply each ``don't know'' rule. Our implementation does not attempt to
 suppress duplicated unifiers.
 

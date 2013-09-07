@@ -2,7 +2,7 @@
     Maude> @/red bc-unify('cons['u:Elt,'V:List] =? 'bc['W:List,'x:Elt] /\/@
     > @/'W:List =? 'cons['y:Elt,'Z:List], upView('BcSignature), 0, 0) ./@
     reduce in TEST-BC-UNIFICATION : bc-unify('W:List =? 'cons['y:Elt,
-        'Z:List]'cons['u:Elt,'V:List] =? 'bc['W:List,'x:Elt], upView(
+        'Z:List] /\ 'cons['u:Elt,'V:List] =? 'bc['W:List,'x:Elt], upView(
         'BcSignature), 0, 0) .
     rewrites: 13424 in 60ms cpu (63 real) (223733 rewrites/second)
     result UnificationPair: {
@@ -14,7 +14,7 @@
     Maude> @/red bc-unify('cons['u:Elt,'V:List] =? 'bc['W:List,'x:Elt] /\/@
     > @/'W:List =? 'cons['y:Elt,'Z:List], upView('BcSignature), 0, 1) ./@
     reduce in TEST-BC-UNIFICATION : bc-unify('W:List =? 'cons['y:Elt,
-        'Z:List]'cons['u:Elt,'V:List] =? 'bc['W:List,'x:Elt], upView(
+        'Z:List] /\ 'cons['u:Elt,'V:List] =? 'bc['W:List,'x:Elt], upView(
         'BcSignature), 0, 1) .
     rewrites: 12902 in 53ms cpu (53ms real) (243433 rewrites/second)
     result UnificationPair?: (noUnifier).UnificationPair?
