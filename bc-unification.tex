@@ -1,5 +1,6 @@
 \documentclass[11pt,twoside,titlepage]{article}
 
+\usepackage[top=1in, bottom=1in, inner=1.5in, outer=1in, includefoot]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
 \usepackage{epsfig}
@@ -21,6 +22,23 @@
 \usepackage[nottoc,section]{tocbibind}
 \usepackage[bookmarks]{hyperref}
 \usepackage{bookmark}
+
+% \setlength{\textheight}{8.5in}
+% \setlength{\columnsep}{2.0pc}
+% \setlength{\textwidth}{6.75in}
+% \setlength{\topmargin}{0.25in}
+% \setlength{\headheight}{0.0in}
+% \setlength{\headsep}{0.0in}
+% \setlength{\parskip}{0.05in}
+% \setlength{\oddsidemargin}{-.15in}
+% \setlength{\evensidemargin}{-.15in}
+% \setlength{\parindent}{1pc}
+
+\pagestyle{plain}
+
+\title{Implementing Unification modulo Chaining}
+\author{Christopher Bouchard}
+\date{\today}
 
 \renewcommand{\tocbibname}{\refname}
 
@@ -76,7 +94,7 @@
 }
 
 \lstdefinestyle{smalllisting}{
-    basicstyle=\small\ttfamily,
+    basicstyle=\footnotesize\ttfamily,
 }
 
 % Definition of Maude for lstlistings
@@ -96,39 +114,20 @@
     keywords=[5]{=, =>, ->, ~>, ::},
 }
 
-\setlength{\textheight}{8.5in}
-\setlength{\columnsep}{2.0pc}
-\setlength{\textwidth}{6.75in}
-\setlength{\topmargin}{0.25in}
-\setlength{\headheight}{0.0in}
-\setlength{\headsep}{0.0in}
-\setlength{\parskip}{0.05in}
-\setlength{\oddsidemargin}{-.15in}
-\setlength{\evensidemargin}{-.15in}
-\setlength{\parindent}{1pc}
-
-\pagestyle{plain}
-
-\title{Implementing Unification modulo Chaining}
-\author{Christopher Bouchard}
-\date{\today}
-
 \pagenumbering{roman}
 
 \begin{document}
 
 \begin{titlepage}
     \pdfbookmark{Implementing Unification modulo Chaining}{Title Page}
-    {\vspace*{-1in}\hspace*{-.5in}
-    \parbox{7.25in}{
+
+    \parbox{\textwidth}{
     \setlength{\baselineskip}{13pt}
     \makebox{\ } \hfill {\footnotesize College of Computing and Information} \\
-    \makebox{\ } \hfill {\footnotesize Computer Science Department} \\
-    \makebox{\ } \\
-    \\
+    \makebox{\ } \hfill {\footnotesize Computer Science Department}
     }
-    \vspace{-.95in}}
 
+    \vspace{-2em}
     \epsfxsize=3.15in
     \epsfclipon
     \hspace{-0.5in}{\raggedright{
@@ -136,24 +135,17 @@
     }}
 
     \vspace*{2in}
-
     \begin{center}
-        \textbf{\huge Implementing Unification modulo Chaining} \\[+15pt]
+        \textbf{\huge Implementing Unification\\[+5pt] modulo Chaining} \\[+15pt]
         \textbf{(Master's Project)}
-        \par
     \end{center}
 
-    \vspace{2in}
-
+    \vspace*{1.5in}
     \begin{center}
-    \textbf{\large Christopher Bouchard}\\
-
-    \par\end{center}{\large \par}
-
-    \begin{center}
-    \textbf{\large \vspace{0.5in}
-    Advisor: Paliath Narendran }\textbf{ }
-    \par\end{center}
+        \textbf{\large Christopher Bouchard} \\[+5pt]
+        \textbf{\large Advisor: Paliath Narendran } \\[+5pt]
+        \textbf{\large \today}
+    \end{center}
 \end{titlepage}
 
 \thispagestyle{empty}
@@ -205,13 +197,14 @@ Beyond just listening to my babbling about algorithms and ``the paper,'' her
 love and belief in me when I had lost my confidence have kept me going. Thank
 you.
 
+\vspace{1em}
 This work was supported in part by NSF grant CNS~09-05286.
 \end{quotation}
 
-\clearpage
+\cleardoublepage
 \tableofcontents
 
-\clearpage
+\cleardoublepage
 \pagenumbering{arabic}
 
 \section{Introduction}\label{section:intro}
@@ -663,7 +656,7 @@ from the \lstinline|META-LEVEL| module, and in fact there is a view
 \label{subsection:bc-unif-mod}
 
 This module is the heart of the project. It uses the \lstinline|inferenceRules|
-strategy from \lstinline|INFERENCE| to apply the inference rules implemented
+strategy defined in \lstinline|INFERENCE| to apply the inference rules implemented
 in \lstinline|BC-INFERENCE|. The unification operator is called
 \lstinline|bc-unify|, which takes as arguments a
 \lstinline|UnificationProblem|, a meta-representation of a view from
@@ -970,7 +963,7 @@ correctly called \lstinline|BC-UNIFICATION{ALG :: UNIFICATION-ALGORITHM}|.
 \label{subappendix:using-bc-test-mod}
 
 For interactive testing, the \lstinline|TEST-BC-UNIFICATION| module provides a
-version of \lstinline|BC-UNIFICATION| instantiated with the view
+version of the \lstinline|BC-| \lstinline|UNIFICATION| module instantiated with the view
 \lstinline|MetaUnifyAlg|, which uses the built-in unification operation
 \lstinline|metaUnify| from \lstinline|META-LEVEL|. The problem is given as
 set of equations separated by \lstinline|/\| (slash-backslash or ``wedge'').
