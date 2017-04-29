@@ -183,6 +183,8 @@ fmod BC-UNIFICATION{ALG :: UNIFICATION-ALGORITHM} is
             else noUnifier
         fi
         if S1 ; S2 := getPartition(EQ, SIG)
+        --- TODO: Allow the user to descend into additional solutions of the
+        --- element equations.
         /\ PAIR := unify-alg(MOD, setToProblem(S2), N, 0) .
 
     *** Partition a set of equations into list and element equations.
