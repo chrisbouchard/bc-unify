@@ -118,6 +118,8 @@ fmod BC-UNIFICATION{ALG :: UNIFICATION-ALGORITHM} is
     protecting UNIFICAND-SET .
     protecting UNIFICATION-PAIR-UTILS .
 
+    extending META-TERM .
+
     sorts UnificandSetPartition .
 
     op _;_ : UnificandSet UnificandSet -> UnificandSetPartition [ctor] .

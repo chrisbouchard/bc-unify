@@ -208,6 +208,8 @@ fmod META-GRAPH{E :: EDGE} is
     protecting META-LEVEL .
     protecting NAT-UTILS .
 
+    extending META-TERM .
+
     vars N N1 N2 : E$Node .
     vars S : E$NodeSet .
     vars G : Graph{E} .

@@ -33,7 +33,7 @@
 
 *** The idea of caps generalizes contexts to allow multiple holes.
 fmod CAP is
-    protecting META-TERM .
+    extending META-TERM .
 
     sorts Cap NeCapList NeGTermList .
     subsorts Context < Cap NeCTermList < NeCapList .
@@ -78,8 +78,9 @@ endfm
 ***
 fmod APPLY is
     protecting CAP .
-    protecting META-TERM .
     protecting NAT .
+
+    extending META-TERM .
 
     vars C : Cap .
     vars CL : NeCapList .

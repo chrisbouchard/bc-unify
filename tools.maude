@@ -32,9 +32,9 @@
 **********************************************************************
 
 fmod TOOLS is
-    pr CONVERSION .
-    pr META-LEVEL .
-    pr STRING .
+    protecting CONVERSION .
+    protecting META-LEVEL .
+    protecting STRING .
 
     vars N : Nat .
     vars Y : Type .
