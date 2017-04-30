@@ -158,7 +158,7 @@ fmod BC-UNIFICATION{ALG :: UNIFICATION-ALGORITHM} is
         bc-unify(PROB, VIEW, N, s LSKIP, ESKIP) [owise] .
 
     op bc-unify : UnificationProblem View Nat Nat Nat -> [UnificationPair?] .
-    ceq bc-unify(PROB, VIEW, N, LSKIP, ESKIP) = PAIR'
+    ceq bc-unify(PROB, VIEW, N, LSKIP, ESKIP) = PAIR
         if SIG := metaGetSignature(VIEW)
         /\ MOD := wrapInTheory(getTo(VIEW))
         /\ {EQ, N'} := decompose(MOD, problemToSet(PROB), N)
@@ -182,7 +182,7 @@ fmod BC-UNIFICATION{ALG :: UNIFICATION-ALGORITHM} is
                                   none none none none none
                               endth) .
 
-    op list-phase : UnificandSet BcSignature Nat Nat -> [UnificationPair?] .
+    op list-phase : UnificandSet BCSignature Nat Nat -> [UnificationPair?] .
     eq list-phase(EQ, SIG, N, LSKIP) =
         downTerm(inferenceRules(upModule('BC-INFERENCE, false),
                                 upTerm(bc-infer(EQ, SIG, N)),
