@@ -131,7 +131,8 @@ fmod BC-UNIFICATION{ALG :: UNIFICATION-ALGORITHM} is
     vars SIG : BCSignature .
     vars PROB : UnificationProblem .
     vars EQ S1 S2 : UnificandSet .
-    vars PAIR PAIR' : UnificationPair? .
+    vars PAIR : UnificationPair? .
+    vars PAIR? : [UnificationPair?] .
     vars SUB : Substitution .
 
     vars BC H CONS : Qid .
@@ -143,25 +144,27 @@ fmod BC-UNIFICATION{ALG :: UNIFICATION-ALGORITHM} is
 
     *** This is the entry-point for BC unification.
     op bc-unify : UnificationProblem View Nat Nat -> [UnificationPair?] .
-    eq bc-unify(PROB, VIEW, N, SKIP) = $bc-unify(PROB, VIEW, N, 0, SKIP) .
+    eq bc-unify(PROB, VIEW, N, SKIP) =
+        bc-unify-balance-skips(PROB, VIEW, N, 0, SKIP) .
 
-    op $bc-unify : UnificationProblem View Nat Nat Nat -> [UnificationPair?] .
-    eq $bc-unify(PROB, VIEW, N, LSKIP, 0) =
-        $$bc-unify(PROB, VIEW, N, LSKIP, 0) .
-    ceq $bc-unify(PROB, VIEW, N, LSKIP, s ESKIP) = PAIR
-        if PAIR := $$bc-unify(PROB, VIEW, N, LSKIP, 0)
+    op bc-unify-balance-skips : UnificationProblem View Nat Nat Nat
+                                -> [UnificationPair?] .
+    eq bc-unify-balance-skips(PROB, VIEW, N, LSKIP, 0) =
+        bc-unify(PROB, VIEW, N, LSKIP, 0) .
+    ceq bc-unify-balance-skips(PROB, VIEW, N, LSKIP, s ESKIP) = PAIR
+        if PAIR := bc-unify(PROB, VIEW, N, LSKIP, 0)
         /\ PAIR =/= noUnifier .
-    eq $bc-unify(PROB, VIEW, N, LSKIP, s ESKIP) =
-        $$bc-unify(PROB, VIEW, N, s LSKIP, ESKIP) [owise] .
+    eq bc-unify-balance-skips(PROB, VIEW, N, LSKIP, s ESKIP) =
+        bc-unify(PROB, VIEW, N, s LSKIP, ESKIP) [owise] .
 
-    op $$bc-unify : UnificationProblem View Nat Nat Nat -> [UnificationPair?] .
-    ceq $$bc-unify(PROB, VIEW, N, LSKIP, ESKIP) = PAIR'
+    op bc-unify : UnificationProblem View Nat Nat Nat -> [UnificationPair?] .
+    ceq bc-unify(PROB, VIEW, N, LSKIP, ESKIP) = PAIR'
         if SIG := metaGetSignature(VIEW)
         /\ MOD := wrapInTheory(getTo(VIEW))
         /\ {EQ, N'} := decompose(MOD, problemToSet(PROB), N)
-        /\ PAIR := list-phase(EQ, SIG, N', LSKIP)
-        /\ PAIR' := element-phase(PAIR?, MOD, ESKIP)
-        /\ PAIR' =/= noUnifier .
+        /\ PAIR? := list-phase(EQ, SIG, N', LSKIP)
+        /\ PAIR := element-phase(PAIR?, MOD, ESKIP)
+        /\ PAIR =/= noUnifier .
 
     op metaGetSignature : View -> [BCSignature] .
     eq metaGetSignature(VIEW) = downTerm(getTerm(
