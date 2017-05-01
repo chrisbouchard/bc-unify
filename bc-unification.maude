@@ -147,24 +147,23 @@ fmod BC-UNIFICATION{ALG :: UNIFICATION-ALGORITHM} is
     eq bc-unify(PROB, VIEW, N, SKIP) =
         bc-unify-balance-skips(PROB, VIEW, N, 0, SKIP) .
 
-    op bc-unify-balance-skips : UnificationProblem View Nat Nat Nat
-                                -> [UnificationPair?] .
-    eq bc-unify-balance-skips(PROB, VIEW, N, LSKIP, 0) =
-        bc-unify(PROB, VIEW, N, LSKIP, 0) .
-    ceq bc-unify-balance-skips(PROB, VIEW, N, LSKIP, s ESKIP) = PAIR
-        if PAIR := bc-unify(PROB, VIEW, N, LSKIP, 0)
-        /\ PAIR =/= noUnifier .
-    eq bc-unify-balance-skips(PROB, VIEW, N, LSKIP, s ESKIP) =
-        bc-unify(PROB, VIEW, N, s LSKIP, ESKIP) [owise] .
-
     op bc-unify : UnificationProblem View Nat Nat Nat -> [UnificationPair?] .
     ceq bc-unify(PROB, VIEW, N, LSKIP, ESKIP) = PAIR
         if SIG := metaGetSignature(VIEW)
         /\ MOD := wrapInTheory(getTo(VIEW))
         /\ {EQ, N'} := decompose(MOD, problemToSet(PROB), N)
         /\ PAIR? := list-phase(EQ, SIG, N', LSKIP)
-        /\ PAIR := element-phase(PAIR?, MOD, ESKIP)
-        /\ PAIR =/= noUnifier .
+        /\ PAIR := element-phase(PAIR?, MOD, ESKIP) .
+
+    op bc-unify-balance-skips : UnificationProblem View Nat Nat Nat
+                                -> [UnificationPair?] .
+    eq bc-unify-balance-skips(PROB, VIEW, N, LSKIP, 0) =
+        bc-unify(PROB, VIEW, N, LSKIP, 0) .
+    ceq bc-unify-balance-skips(PROB, VIEW, N, LSKIP, s ESKIP) = PAIR
+        if PAIR := bc-unify(PROB, VIEW, N, LSKIP, s ESKIP)
+        /\ PAIR :: UnificationPair .
+    eq bc-unify-balance-skips(PROB, VIEW, N, LSKIP, s ESKIP) =
+        bc-unify-balance-skips(PROB, VIEW, N, s LSKIP, ESKIP) [owise] .
 
     op metaGetSignature : View -> [BCSignature] .
     eq metaGetSignature(VIEW) = downTerm(getTerm(
@@ -190,9 +189,13 @@ fmod BC-UNIFICATION{ALG :: UNIFICATION-ALGORITHM} is
                                 LSKIP),
                     (noUnifier).UnificationPair?) .
 
-    op element-phase : [UnificationPair?] Module Nat -> [UnificationPair?] .
+    op element-phase : [UnificationPair?] Module Nat -> UnificationPair? .
     eq element-phase(PAIR, MOD, SKIP) = PAIR .
-    ceq element-phase(bc-infer(EQ, SIG, N), MOD, SKIP) = {buildsub(S1), N}
+    ceq element-phase(bc-infer(EQ, SIG, N), MOD, SKIP) =
+        if SKIP == 0
+            then {buildsub(S1), N}
+            else noUnifier
+        fi
         if S1 ; S2 := getPartition(EQ, SIG)
         /\ S2 = empty .
     ceq element-phase(bc-infer(EQ, SIG, N), MOD, SKIP) =
