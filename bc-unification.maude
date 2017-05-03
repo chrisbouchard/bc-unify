@@ -192,21 +192,23 @@ fmod BC-UNIFICATION{ALG :: UNIFICATION-ALGORITHM} is
     op element-phase : [UnificationPair?] Module Nat -> UnificationPair? .
     eq element-phase(PAIR, MOD, SKIP) = PAIR .
     ceq element-phase(bc-infer(EQ, SIG, N), MOD, SKIP) =
-        if SKIP == 0
-            then {buildsub(S1), N}
-            else noUnifier
+        if S2 == empty
+            then if SKIP == 0
+                then {buildsub(S1), N}
+                else noUnifier
+            fi
+            else build-solution(unify-alg(MOD, setToProblem(S2), N, SKIP), S1)
         fi
-        if S1 ; S2 := getPartition(EQ, SIG)
-        /\ S2 = empty .
-    ceq element-phase(bc-infer(EQ, SIG, N), MOD, SKIP) =
+        if S1 ; S2 := getPartition(EQ, SIG) .
+
+    op build-solution : UnificationPair? UnificandSet -> UnificationPair? .
+    eq build-solution(PAIR, EQ) =
         if PAIR :: UnificationPair
-            then {filterSubst((getSubstitution(PAIR))[buildsub(S1)] ;
+            then {filterSubst((getSubstitution(PAIR))[buildsub(EQ)] ;
                               getSubstitution(PAIR)),
                   getNat(PAIR)}
             else noUnifier
-        fi
-        if S1 ; S2 := getPartition(EQ, SIG)
-        /\ PAIR := unify-alg(MOD, setToProblem(S2), N, SKIP) .
+        fi .
 
     *** Partition a set of equations into list and element equations.
     op getPartition : UnificandSet BCSignature -> UnificandSetPartition .
