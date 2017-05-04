@@ -132,7 +132,7 @@ fmod BC-UNIFICATION{ALG :: UNIFICATION-ALGORITHM} is
     vars PROB : UnificationProblem .
     vars EQ S1 S2 : UnificandSet .
     vars PAIR : UnificationPair? .
-    vars PAIR? PAIR?' : [UnificationPair?] .
+    vars PAIR? : [UnificationPair?] .
     vars SUB : Substitution .
 
     vars BC H CONS : Qid .
@@ -144,16 +144,15 @@ fmod BC-UNIFICATION{ALG :: UNIFICATION-ALGORITHM} is
 
     *** This is the entry-point for BC unification.
     op bc-unify : UnificationProblem View Nat Nat -> UnificationPair? .
-    ceq bc-unify(PROB, VIEW, N, SKIP) = bc-unify-balance(PAIR?, MOD, 0, SKIP)
+    ceq bc-unify(PROB, VIEW, N, SKIP) =
+        bc-unify-balance(bc-infer(EQ, SIG, N), MOD, 0, SKIP)
         if SIG := metaGetSignature(VIEW)
         /\ MOD := wrapInTheory(getTo(VIEW))
-        /\ {EQ, N'} := decompose(MOD, problemToSet(PROB), N)
-        /\ PAIR? := bc-infer(EQ, SIG, N) .
+        /\ {EQ, N'} := decompose(MOD, problemToSet(PROB), N) .
 
     op bc-unify : [UnificationPair?] Module Nat Nat -> UnificationPair? .
-    ceq bc-unify(PAIR?, MOD, LSKIP, ESKIP) = PAIR
-        if PAIR?' := list-phase(PAIR?, LSKIP)
-        /\ PAIR := element-phase(PAIR?', MOD, ESKIP) .
+    eq bc-unify(PAIR?, MOD, LSKIP, ESKIP) =
+        element-phase(list-phase(PAIR?, LSKIP), MOD, ESKIP) .
 
     op bc-unify-balance : [UnificationPair?] Module Nat Nat
                           -> UnificationPair? .
